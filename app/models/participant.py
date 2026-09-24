@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from ..extensions import db
 
 
-class Guest(db.Model):
-    __tablename__ = "guests"
+class Participant(db.Model):
+    __tablename__ = "participants"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -14,9 +14,9 @@ class Guest(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    invitations = db.relationship(
-        "PodcastGuest", backref="guest", lazy="dynamic", cascade="all, delete-orphan"
+    episode_slots = db.relationship(
+        "PodcastParticipant", backref="participant", lazy="dynamic", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
-        return f"<Guest {self.name}>"
+        return f"<Participant {self.name}>"

@@ -36,29 +36,28 @@ class Podcast(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    guest_slots = db.relationship(
-        "PodcastGuest", backref="podcast", lazy="dynamic", cascade="all, delete-orphan"
+    participant_slots = db.relationship(
+        "PodcastParticipant", backref="podcast", lazy="dynamic", cascade="all, delete-orphan"
     )
 
     @property
-    def accepted_guests(self):
-        from .podcast_guest import InvitationStatus
-        return [
-            pg.guest for pg in self.guest_slots
-            if pg.invitation_status == InvitationStatus.ACCEPTED
-        ]
+    def keynote_slots(self):
+        from .podcast_participant import ParticipantRole
+        return [p for p in self.participant_slots if p.participant_role == ParticipantRole.KEYNOTE_SPEAKER]
 
     @property
-    def pending_guests(self):
-        from .podcast_guest import InvitationStatus
-        return [
-            pg.guest for pg in self.guest_slots
-            if pg.invitation_status == InvitationStatus.PENDING
-        ]
+    def roundtable_slots(self):
+        from .podcast_participant import ParticipantRole
+        return [p for p in self.participant_slots if p.participant_role == ParticipantRole.ROUNDTABLE]
 
     @property
-    def guest_count(self):
-        return self.guest_slots.count()
+    def accepted_participants(self):
+        from .podcast_participant import InvitationStatus
+        return [pp.participant for pp in self.participant_slots if pp.invitation_status == InvitationStatus.ACCEPTED]
+
+    @property
+    def participant_count(self):
+        return self.participant_slots.count()
 
     def __repr__(self):
         return f"<Podcast {self.title}>"

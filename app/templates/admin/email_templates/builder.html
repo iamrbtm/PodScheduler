@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if template else 'New' }} Email Template — PodScheduler{% endblock %}
+{% block page_title %}{{ 'Edit Template: ' + template.name if template else 'New Email Template' }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .builder-layout { display:grid; grid-template-columns:220px 1fr 240px; gap:16px; height:calc(100vh - 160px); overflow:hidden; }
+  .builder-panel { background:#1e1e30; border:1px solid rgba(255,255,255,.1); border-radius:10px; overflow-y:auto; }
+  .panel-title { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); padding:12px 14px 6px; }
+
+  /* Block palette */
+  .block-type { background:#16213e; border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:8px 10px; margin:4px 8px; cursor:grab; font-size:.82rem; display:flex; align-items:center; gap:8px; user-select:none; transition:background .15s; }
+  .block-type:hover { background:rgba(109,74,255,.2); border-color:var(--ps-accent); }
+  .block-type:active { cursor:grabbing; }
+
+  /* Merge field chips */
+  .merge-chip { background:rgba(109,74,255,.15); border:1px solid rgba(109,74,255,.3); border-radius:4px; padding:3px 7px; margin:3px 4px; font-size:.75rem; cursor:pointer; display:inline-block; color:#a78bfa; font-family:monospace; transition:background .15s; }
+  .merge-chip:hover { background:rgba(109,74,255,.35); }
+
+  /* Canvas */
+  .canvas-area { padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .canvas-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:rgba(255,255,255,.2); font-size:.9rem; pointer-events:none; }
+  .canvas-block { background:#16213e; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:12px 14px; position:relative; cursor:default; transition:border-color .15s; }
+  .canvas-block:hover, .canvas-block.selected { border-color:var(--ps-accent); }
+  .canvas-block .block-label { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.3); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .canvas-block .block-label .drag-handle { cursor:grab; color:rgba(255,255,255,.2); }
+  .canvas-block .block-label .drag-handle:hover { color:rgba(255,255,255,.5); }
+  .canvas-block .block-actions { position:absolute; top:8px; right:8px; display:flex; gap:4px; }
+  .block-btn { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:4px; padding:2px 6px; font-size:.7rem; cursor:pointer; color:rgba(255,255,255,.5); }
+  .block-btn:hover { background:rgba(255,255,255,.1); color:#fff; }
+  .block-btn.delete:hover { background:rgba(220,53,69,.3); color:#f87171; border-color:rgba(220,53,69,.4); }
+
+  /* Block preview styles */
+  .preview-header { background:#1a1a2e; border-radius:6px; padding:12px; text-align:center; font-weight:700; color:#fff; }
+  .preview-text { color:rgba(255,255,255,.7); font-size:.85rem; white-space:pre-wrap; }
+  .preview-buttons { display:flex; gap:8px; justify-content:center; }
+  .preview-btn-accept { background:#198754; color:#fff; border-radius:4px; padding:6px 16px; font-size:.8rem; }
+  .preview-btn-decline { background:#dc3545; color:#fff; border-radius:4px; padding:6px 16px; font-size:.8rem; }
+  .preview-divider { border-top:1px solid rgba(255,255,255,.15); margin:4px 0; }
+  .preview-detail-box { background:#0f1629; border-radius:6px; padding:10px 14px; color:rgba(255,255,255,.65); font-size:.82rem; white-space:pre-wrap; }
+  .preview-footer { color:rgba(255,255,255,.3); font-size:.75rem; text-align:center; }
+
+  /* Editor panel */
+  .editor-panel { padding:12px; }
+  .editor-empty { color:rgba(255,255,255,.25); font-size:.82rem; text-align:center; padding:32px 12px; }
+  .editor-label { font-size:.75rem; color:rgba(255,255,255,.5); margin-bottom:4px; display:block; }
+  .editor-input { background:#0f1629; border:1px solid rgba(255,255,255,.15); border-radius:6px; color:#fff; padding:7px 10px; width:100%; font-size:.82rem; resize:vertical; margin-bottom:10px; }
+  .editor-input:focus { outline:none; border-color:var(--ps-accent); }
+
+  /* Drag over highlight */
+  .canvas-block.drag-over { border-color:#6d4aff; background:rgba(109,74,255,.1); }
+  .canvas-area.drag-target { border:2px dashed rgba(109,74,255,.4); border-radius:8px; }
+
+  /* Subject / name bar */
+  .meta-bar { background:#1e1e30; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px 16px; margin-bottom:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .meta-bar input { background:#0f1629; border:1px solid rgba(255,255,255,.15); border-radius:6px; color:#fff; padding:7px 12px; font-size:.85rem; flex:1; min-width:160px; }
+  .meta-bar input:focus { outline:none; border-color:var(--ps-accent); }
+  .meta-bar label { font-size:.75rem; color:rgba(255,255,255,.5); white-space:nowrap; }
+
+  .sortable-ghost { opacity:.3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Meta bar -->
+<div class="meta-bar">
+  <div class="d-flex align-items-center gap-2 flex-grow-1">
+    <label>Template Name</label>
+    <input type="text" id="tmpl-name" placeholder="e.g. Keynote Speaker Invitation"
+           value="{{ template.name if template else '' }}">
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-grow-1">
+    <label>Subject Line</label>
+    <input type="text" id="tmpl-subject" placeholder="e.g. You're invited to {{episode_title}}!"
+           value="{{ template.subject if template else '' }}">
+  </div>
+  <button class="btn btn-accent btn-sm px-4" onclick="saveTemplate()">
+    <i class="bi bi-floppy me-1"></i>Save Template
+  </button>
+  {% if template %}
+  <a href="{{ url_for('email_templates.preview', template_id=template.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-eye me-1"></i>Preview
+  </a>
+  {% endif %}
+  <a href="{{ url_for('email_templates.index') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+</div>
+
+<div class="builder-layout">
+  <!-- Left: Block palette + Merge fields -->
+  <div class="builder-panel">
+    <div class="panel-title">Add Blocks</div>
+    <div id="block-palette">
+      <div class="block-type" draggable="true" data-type="header">
+        <i class="bi bi-type-h1"></i> Header
+      </div>
+      <div class="block-type" draggable="true" data-type="text">
+        <i class="bi bi-text-paragraph"></i> Text
+      </div>
+      <div class="block-type" draggable="true" data-type="detail_box">
+        <i class="bi bi-info-square"></i> Detail Box
+      </div>
+      <div class="block-type" draggable="true" data-type="button_row">
+        <i class="bi bi-hand-index"></i> Accept / Decline Buttons
+      </div>
+      <div class="block-type" draggable="true" data-type="divider">
+        <i class="bi bi-dash-lg"></i> Divider
+      </div>
+      <div class="block-type" draggable="true" data-type="spacer">
+        <i class="bi bi-arrows-expand-vertical"></i> Spacer
+      </div>
+      <div class="block-type" draggable="true" data-type="footer">
+        <i class="bi bi-layout-text-window-reverse"></i> Footer
+      </div>
+    </div>
+
+    <div class="panel-title mt-3">Merge Fields <span style="font-size:.65rem;opacity:.6;">(click to insert)</span></div>
+    <div style="padding:4px 8px 12px;">
+      {% for key, desc in merge_fields.items() %}
+      <span class="merge-chip" title="{{ desc }}" onclick="insertMergeField('{{ key }}')">{{"{{"}}{{ key }}{{"}}"}}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Center: Canvas -->
+  <div class="builder-panel" style="padding:0;">
+    <div id="canvas" class="canvas-area" style="height:100%;">
+      <div id="canvas-empty" class="canvas-empty">
+        <i class="bi bi-layout-text-window" style="font-size:3rem;margin-bottom:12px;"></i>
+        <div>Drag blocks here to build your template</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Block editor -->
+  <div class="builder-panel" id="editor-panel">
+    <div class="panel-title">Block Editor</div>
+    <div id="editor-content">
+      <div class="editor-empty">Select a block on the canvas to edit its content.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+<script>
+const CSRF = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
+const TEMPLATE_ID = {{ template.id if template else 'null' }};
+const INITIAL_BLOCKS = {{ (template.blocks_json or '[]') | safe if template else '[]' }};
+
+let blocks = [];
+let selectedId = null;
+let dragType = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Palette drag start
+  document.querySelectorAll('.block-type').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragType = e.currentTarget.dataset.type;
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+  });
+
+  // Canvas drop
+  const canvas = document.getElementById('canvas');
+  canvas.addEventListener('dragover', e => { e.preventDefault(); canvas.classList.add('drag-target'); });
+  canvas.addEventListener('dragleave', () => canvas.classList.remove('drag-target'));
+  canvas.addEventListener('drop', e => {
+    e.preventDefault();
+    canvas.classList.remove('drag-target');
+    if (dragType) { addBlock(dragType); dragType = null; }
+  });
+
+  // Sortable for reordering
+  Sortable.create(canvas, {
+    animation: 150,
+    handle: '.drag-handle',
+    ghostClass: 'sortable-ghost',
+    filter: '#canvas-empty',
+    onEnd: syncFromDOM,
+  });
+
+  // Load saved blocks
+  if (INITIAL_BLOCKS.length) {
+    blocks = INITIAL_BLOCKS;
+    blocks.forEach(b => renderBlockCard(b));
+    updateEmpty();
+  }
+});
+
+// ── Block management ──────────────────────────────────────────────────────
+function uid() { return '_' + Math.random().toString(36).slice(2, 9); }
+
+const BLOCK_DEFAULTS = {
+  header:     { content: 'You\'re Invited to {{episode_title}}!' },
+  text:       { content: 'Hi {{participant_first_name}},\n\nYou have been selected as a {{participant_role}} on our upcoming episode.\n\n{{personal_message}}' },
+  detail_box: { content: '📅 Date: {{episode_date}} at {{episode_time}}\n⏱ Duration: {{episode_duration}} minutes\n🎤 Host: {{host_name}}\n🎙 Your role: {{participant_role}}' },
+  button_row: { accept_text: 'Accept Invitation', decline_text: 'Decline' },
+  divider:    {},
+  spacer:     { height: 20 },
+  footer:     { content: 'Sent via PodScheduler · If you received this in error, please ignore it.' },
+};
+
+function addBlock(type) {
+  const b = { id: uid(), type, ...JSON.parse(JSON.stringify(BLOCK_DEFAULTS[type] || {})) };
+  blocks.push(b);
+  renderBlockCard(b);
+  updateEmpty();
+  selectBlock(b.id);
+}
+
+function removeBlock(id) {
+  blocks = blocks.filter(b => b.id !== id);
+  document.getElementById('blk-' + id)?.remove();
+  if (selectedId === id) { selectedId = null; renderEditor(null); }
+  updateEmpty();
+}
+
+function syncFromDOM() {
+  const order = [...document.querySelectorAll('.canvas-block')].map(el => el.dataset.id);
+  blocks.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+}
+
+// ── Render canvas cards ───────────────────────────────────────────────────
+const ICONS = { header:'type-h1', text:'text-paragraph', detail_box:'info-square', button_row:'hand-index', divider:'dash-lg', spacer:'arrows-expand-vertical', footer:'layout-text-window-reverse' };
+const LABELS = { header:'Header', text:'Text Block', detail_box:'Detail Box', button_row:'Accept/Decline Buttons', divider:'Divider', spacer:'Spacer', footer:'Footer' };
+
+function renderBlockCard(b) {
+  const existing = document.getElementById('blk-' + b.id);
+  if (existing) { updateBlockPreview(b, existing); return; }
+
+  const div = document.createElement('div');
+  div.className = 'canvas-block';
+  div.id = 'blk-' + b.id;
+  div.dataset.id = b.id;
+  div.innerHTML = `
+    <div class="block-label">
+      <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+      <i class="bi bi-${ICONS[b.type] || 'square'}"></i>
+      ${LABELS[b.type] || b.type}
+    </div>
+    <div class="block-preview"></div>
+    <div class="block-actions">
+      <button class="block-btn delete" onclick="removeBlock('${b.id}')" title="Delete"><i class="bi bi-trash3"></i></button>
+    </div>`;
+  div.addEventListener('click', e => { if (!e.target.closest('.block-btn')) selectBlock(b.id); });
+  updateBlockPreview(b, div);
+  document.getElementById('canvas').appendChild(div);
+}
+
+function updateBlockPreview(b, el) {
+  const prev = el.querySelector('.block-preview');
+  if (!prev) return;
+  const safe = s => (s || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tag = s => `<span style="color:#a78bfa;font-family:monospace;font-size:.75em;">${safe(s)}</span>`;
+  const highlight = s => safe(s).replace(/\{\{(\w+)\}\}/g, (_, k) => tag('{{'+k+'}}'));
+
+  switch (b.type) {
+    case 'header':
+      prev.innerHTML = `<div class="preview-header">${highlight(b.content)}</div>`; break;
+    case 'text':
+      prev.innerHTML = `<div class="preview-text">${highlight(b.content)}</div>`; break;
+    case 'detail_box':
+      prev.innerHTML = `<div class="preview-detail-box">${highlight(b.content)}</div>`; break;
+    case 'button_row':
+      prev.innerHTML = `<div class="preview-buttons">
+        <span class="preview-btn-accept">${safe(b.accept_text)}</span>
+        <span class="preview-btn-decline">${safe(b.decline_text)}</span></div>`; break;
+    case 'divider':
+      prev.innerHTML = `<div class="preview-divider"></div>`; break;
+    case 'spacer':
+      prev.innerHTML = `<div style="color:rgba(255,255,255,.2);font-size:.75rem;text-align:center;">Spacer (${b.height}px)</div>`; break;
+    case 'footer':
+      prev.innerHTML = `<div class="preview-footer">${highlight(b.content)}</div>`; break;
+  }
+}
+
+function updateEmpty() {
+  const empty = document.getElementById('canvas-empty');
+  if (empty) empty.style.display = blocks.length ? 'none' : 'flex';
+}
+
+// ── Selection & editor ───────────────────────────────────────────────────
+function selectBlock(id) {
+  document.querySelectorAll('.canvas-block').forEach(el => el.classList.remove('selected'));
+  document.getElementById('blk-' + id)?.classList.add('selected');
+  selectedId = id;
+  renderEditor(blocks.find(b => b.id === id));
+}
+
+function renderEditor(b) {
+  const panel = document.getElementById('editor-content');
+  if (!b) { panel.innerHTML = '<div class="editor-empty">Select a block to edit.</div>'; return; }
+
+  let html = `<div class="editor-panel">`;
+  switch (b.type) {
+    case 'header':
+      html += field('Heading Text', 'content', b.content, true); break;
+    case 'text':
+      html += field('Content', 'content', b.content, true, 8); break;
+    case 'detail_box':
+      html += field('Content', 'content', b.content, true, 6); break;
+    case 'button_row':
+      html += field('Accept Button Label', 'accept_text', b.accept_text);
+      html += field('Decline Button Label', 'decline_text', b.decline_text); break;
+    case 'spacer':
+      html += field('Height (px)', 'height', b.height); break;
+    case 'footer':
+      html += field('Footer Text', 'content', b.content, true, 3); break;
+    case 'divider':
+      html += `<p style="color:rgba(255,255,255,.3);font-size:.82rem;padding:8px 0;">No settings for divider.</p>`; break;
+  }
+  html += `</div>`;
+  panel.innerHTML = html;
+
+  // Wire up inputs
+  panel.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('input', () => {
+      const f = input.dataset.field;
+      const b2 = blocks.find(x => x.id === selectedId);
+      if (!b2) return;
+      b2[f] = input.tagName === 'TEXTAREA' ? input.value : (isNaN(input.value) ? input.value : Number(input.value));
+      updateBlockPreview(b2, document.getElementById('blk-' + selectedId));
+    });
+    input.addEventListener('focus', () => { window._focusedInput = input; });
+  });
+}
+
+function field(label, key, value, isTextarea=false, rows=3) {
+  const val = (value ?? '').toString().replace(/"/g, '&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (isTextarea) {
+    return `<label class="editor-label">${label}</label>
+      <textarea class="editor-input" data-field="${key}" rows="${rows}">${val}</textarea>`;
+  }
+  return `<label class="editor-label">${label}</label>
+    <input class="editor-input" type="text" data-field="${key}" value="${val}">`;
+}
+
+// ── Merge field insertion ─────────────────────────────────────────────────
+function insertMergeField(key) {
+  const token = '{{' + key + '}}';
+  const input = window._focusedInput;
+  if (!input) {
+    // Append to selected block's first text field if any
+    const b = blocks.find(x => x.id === selectedId);
+    if (b && b.content !== undefined) { b.content = (b.content || '') + token; renderEditor(b); updateBlockPreview(b, document.getElementById('blk-' + selectedId)); }
+    return;
+  }
+  const start = input.selectionStart, end = input.selectionEnd;
+  const before = input.value.slice(0, start);
+  const after  = input.value.slice(end);
+  input.value = before + token + after;
+  input.selectionStart = input.selectionEnd = start + token.length;
+  input.dispatchEvent(new Event('input'));
+  input.focus();
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────
+async function saveTemplate() {
+  syncFromDOM();
+  const name    = document.getElementById('tmpl-name').value.trim();
+  const subject = document.getElementById('tmpl-subject').value.trim();
+  if (!name || !subject) { alert('Please fill in the template name and subject line.'); return; }
+
+  const payload = { id: TEMPLATE_ID, name, subject, blocks };
+  const res = await fetch('{{ url_for("email_templates.save") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (res.ok) { window.location = data.redirect; }
+  else { alert(data.error || 'Save failed.'); }
+}
+</script>
+{% endblock %}

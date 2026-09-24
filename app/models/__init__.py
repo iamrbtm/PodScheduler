@@ -1,12 +1,14 @@
 from .role import Role
 from .user import User
 from .podcast import Podcast, PodcastStatus
-from .guest import Guest
-from .podcast_guest import PodcastGuest, InvitationStatus
+from .participant import Participant
+from .podcast_participant import PodcastParticipant, InvitationStatus, ParticipantRole
+from .email_template import EmailTemplate, MERGE_FIELDS
 
 __all__ = [
     "Role", "User",
     "Podcast", "PodcastStatus",
-    "Guest",
-    "PodcastGuest", "InvitationStatus",
+    "Participant",
+    "PodcastParticipant", "InvitationStatus", "ParticipantRole",
+    "EmailTemplate", "MERGE_FIELDS",
 ]

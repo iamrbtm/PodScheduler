@@ -20,16 +20,18 @@ def create_app(config_name=None):
     from .routes.auth import auth_bp
     from .routes.admin import admin_bp
     from .routes.podcasts import podcasts_bp
-    from .routes.guests import guests_bp
+    from .routes.participants import participants_bp
     from .routes.invitations import invitations_bp
+    from .routes.email_templates import email_templates_bp
     from .routes.main import main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(podcasts_bp, url_prefix="/podcasts")
-    app.register_blueprint(guests_bp, url_prefix="/guests")
+    app.register_blueprint(participants_bp, url_prefix="/participants")
     app.register_blueprint(invitations_bp, url_prefix="/invitations")
+    app.register_blueprint(email_templates_bp, url_prefix="/admin/email-templates")
 
     _register_cli(app)
 

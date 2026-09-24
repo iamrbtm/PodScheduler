@@ -33,7 +33,7 @@
         <th>Topic</th>
         <th>Host</th>
         <th>Scheduled</th>
-        <th>Guests</th>
+        <th>Participants</th>
         <th>Status</th>
         <th></th>
       </tr>
@@ -52,7 +52,7 @@
           {% else %}<span class="text-muted">Unscheduled</span>{% endif %}
         </td>
         <td class="text-center">
-          <span class="badge bg-secondary">{{ p.guest_count }}</span>
+          <span class="badge bg-secondary">{{ p.participant_count }}</span>
         </td>
         <td><span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span></td>
         <td class="text-end">

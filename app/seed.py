@@ -18,15 +18,16 @@ def _seed_roles():
         },
         {
             "name": "producer",
-            "description": "Creates and manages podcasts and guests",
+            "description": "Creates and manages episodes and participants",
             "permissions": ",".join(sorted([
                 "create_podcast", "edit_podcast", "delete_podcast",
-                "manage_guests", "send_invitations", "view_all",
+                "manage_participants", "send_invitations",
+                "manage_email_templates", "view_all",
             ])),
         },
         {
             "name": "host",
-            "description": "Views and manages their own podcasts",
+            "description": "Views and manages their own episodes",
             "permissions": ",".join(sorted([
                 "create_podcast", "send_invitations",
             ])),
@@ -61,12 +62,7 @@ def _seed_admin():
     password = os.getenv("ADMIN_PASSWORD", "changeme123")
 
     if not User.query.filter_by(email=email).first():
-        admin = User(
-            username=username,
-            email=email,
-            role_id=admin_role.id,
-            is_active=True,
-        )
+        admin = User(username=username, email=email, role_id=admin_role.id, is_active=True)
         admin.set_password(password)
         db.session.add(admin)
         db.session.commit()

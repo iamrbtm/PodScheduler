@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Podcast, PodcastStatus, User, Guest, PodcastGuest
-from ..models.podcast_guest import InvitationStatus
-from ..forms import PodcastForm, InviteGuestForm
+from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant, EmailTemplate
+from ..models.podcast_participant import InvitationStatus, ParticipantRole
+from ..forms import PodcastForm, InviteParticipantForm
 from ..decorators import permission_required
 from ..email import send_invitation_email
 
@@ -55,7 +55,7 @@ def create():
         )
         db.session.add(podcast)
         db.session.commit()
-        flash(f"Podcast '{podcast.title}' created.", "success")
+        flash(f"Episode '{podcast.title}' created.", "success")
         return redirect(url_for("podcasts.detail", podcast_id=podcast.id))
 
     return render_template("podcasts/form.html", form=form, podcast=None)
@@ -67,16 +67,20 @@ def detail(podcast_id):
     podcast = Podcast.query.get_or_404(podcast_id)
     _check_access(podcast)
 
-    invite_form = InviteGuestForm()
-    already_invited_ids = [pg.guest_id for pg in podcast.guest_slots]
-    available_guests = Guest.query.filter(Guest.id.notin_(already_invited_ids)).order_by(Guest.name).all()
-    invite_form.guest_id.choices = [(g.id, f"{g.name} <{g.email}>") for g in available_guests]
+    invite_form = InviteParticipantForm()
+    already_invited_ids = [pp.participant_id for pp in podcast.participant_slots]
+    available = Participant.query.filter(Participant.id.notin_(already_invited_ids)).order_by(Participant.name).all()
+    invite_form.participant_id.choices = [(p.id, f"{p.name} <{p.email}>") for p in available]
+
+    templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
+    invite_form.email_template_id.choices = [(0, "— Default template —")] + [(t.id, t.name) for t in templates]
 
     return render_template(
         "podcasts/detail.html",
         podcast=podcast,
         invite_form=invite_form,
         InvitationStatus=InvitationStatus,
+        ParticipantRole=ParticipantRole,
     )
 
 
@@ -88,7 +92,7 @@ def edit(podcast_id):
 
     form = PodcastForm(obj=podcast)
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
-    if form.status.data:
+    if podcast.status:
         form.status.data = podcast.status.value if isinstance(podcast.status, PodcastStatus) else podcast.status
 
     if form.validate_on_submit():
@@ -101,7 +105,7 @@ def edit(podcast_id):
         podcast.status = PodcastStatus(form.status.data)
         podcast.host_id = form.host_id.data
         db.session.commit()
-        flash("Podcast updated.", "success")
+        flash("Episode updated.", "success")
         return redirect(url_for("podcasts.detail", podcast_id=podcast.id))
 
     return render_template("podcasts/form.html", form=form, podcast=podcast)
@@ -115,67 +119,71 @@ def delete(podcast_id):
     title = podcast.title
     db.session.delete(podcast)
     db.session.commit()
-    flash(f"Podcast '{title}' deleted.", "success")
+    flash(f"Episode '{title}' deleted.", "success")
     return redirect(url_for("podcasts.index"))
 
 
 @podcasts_bp.route("/<int:podcast_id>/invite", methods=["POST"])
 @login_required
 @permission_required("send_invitations")
-def invite_guest(podcast_id):
+def invite_participant(podcast_id):
     podcast = Podcast.query.get_or_404(podcast_id)
     _check_edit_access(podcast)
 
-    form = InviteGuestForm()
-    already_invited_ids = [pg.guest_id for pg in podcast.guest_slots]
-    available_guests = Guest.query.filter(Guest.id.notin_(already_invited_ids)).order_by(Guest.name).all()
-    form.guest_id.choices = [(g.id, f"{g.name} <{g.email}>") for g in available_guests]
+    invite_form = InviteParticipantForm()
+    already_invited_ids = [pp.participant_id for pp in podcast.participant_slots]
+    available = Participant.query.filter(Participant.id.notin_(already_invited_ids)).order_by(Participant.name).all()
+    invite_form.participant_id.choices = [(p.id, f"{p.name} <{p.email}>") for p in available]
+    templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
+    invite_form.email_template_id.choices = [(0, "— Default template —")] + [(t.id, t.name) for t in templates]
 
-    if form.validate_on_submit():
-        pg = PodcastGuest(
+    if invite_form.validate_on_submit():
+        template_id = invite_form.email_template_id.data or None
+        pp = PodcastParticipant(
             podcast_id=podcast.id,
-            guest_id=form.guest_id.data,
-            message=form.message.data,
+            participant_id=invite_form.participant_id.data,
+            participant_role=ParticipantRole(invite_form.participant_role.data),
+            email_template_id=template_id if template_id else None,
+            message=invite_form.message.data,
         )
-        pg.mark_invited()
-        db.session.add(pg)
+        pp.mark_invited()
+        db.session.add(pp)
         db.session.flush()
 
-        sent = send_invitation_email(pg)
+        sent = send_invitation_email(pp)
         db.session.commit()
 
         if sent:
-            flash(f"Invitation sent to {pg.guest.name}.", "success")
+            flash(f"Invitation sent to {pp.participant.name}.", "success")
         else:
-            flash(f"Guest added but email delivery failed. Check mail settings.", "warning")
+            flash("Participant added but email delivery failed. Check mail settings.", "warning")
 
     return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
 
 
-@podcasts_bp.route("/<int:podcast_id>/guests/<int:guest_id>/remove", methods=["POST"])
+@podcasts_bp.route("/<int:podcast_id>/participants/<int:participant_id>/remove", methods=["POST"])
 @login_required
-def remove_guest(podcast_id, guest_id):
+def remove_participant(podcast_id, participant_id):
     podcast = Podcast.query.get_or_404(podcast_id)
     _check_edit_access(podcast)
-    pg = PodcastGuest.query.filter_by(podcast_id=podcast_id, guest_id=guest_id).first_or_404()
-    db.session.delete(pg)
+    pp = PodcastParticipant.query.filter_by(podcast_id=podcast_id, participant_id=participant_id).first_or_404()
+    db.session.delete(pp)
     db.session.commit()
-    flash("Guest removed from podcast.", "success")
+    flash("Participant removed from episode.", "success")
     return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
 
 
-@podcasts_bp.route("/<int:podcast_id>/guests/<int:guest_id>/resend", methods=["POST"])
+@podcasts_bp.route("/<int:podcast_id>/participants/<int:participant_id>/resend", methods=["POST"])
 @login_required
 @permission_required("send_invitations")
-def resend_invitation(podcast_id, guest_id):
-    podcast = Podcast.query.get_or_404(podcast_id)
-    pg = PodcastGuest.query.filter_by(podcast_id=podcast_id, guest_id=guest_id).first_or_404()
-    pg.mark_invited()
+def resend_invitation(podcast_id, participant_id):
+    pp = PodcastParticipant.query.filter_by(podcast_id=podcast_id, participant_id=participant_id).first_or_404()
+    pp.mark_invited()
     db.session.flush()
-    sent = send_invitation_email(pg)
+    sent = send_invitation_email(pp)
     db.session.commit()
     if sent:
-        flash(f"Invitation resent to {pg.guest.name}.", "success")
+        flash(f"Invitation resent to {pp.participant.name}.", "success")
     else:
         flash("Email delivery failed. Check mail settings.", "warning")
     return redirect(url_for("podcasts.detail", podcast_id=podcast_id))

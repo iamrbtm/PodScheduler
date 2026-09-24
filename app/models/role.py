@@ -7,9 +7,6 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
     description = db.Column(db.String(255))
-
-    # Permissions stored as comma-separated strings for simplicity
-    # e.g. "manage_users,manage_roles,create_podcast,edit_podcast,delete_podcast,manage_guests,view_only"
     permissions = db.Column(db.Text, default="")
 
     users = db.relationship("User", backref="role", lazy="dynamic")
@@ -37,10 +34,11 @@ class Role(db.Model):
 PERMISSIONS = {
     "manage_users": "Create, edit, and delete users",
     "manage_roles": "Create, edit, and delete roles",
-    "create_podcast": "Create new podcasts",
-    "edit_podcast": "Edit any podcast",
-    "delete_podcast": "Delete any podcast",
-    "manage_guests": "Add, edit, and remove guests",
-    "send_invitations": "Send guest invitations",
-    "view_all": "View all podcasts and guests",
+    "create_podcast": "Create new episodes",
+    "edit_podcast": "Edit any episode",
+    "delete_podcast": "Delete any episode",
+    "manage_participants": "Add, edit, and remove participants",
+    "send_invitations": "Send participant invitations",
+    "manage_email_templates": "Create and edit email templates",
+    "view_all": "View all episodes and participants",
 }

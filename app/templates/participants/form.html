@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Edit' if guest else 'Add' }} Guest — PodScheduler{% endblock %}
-{% block page_title %}{{ 'Edit Guest' if guest else 'Add Guest' }}{% endblock %}
+{% block title %}{{ 'Edit' if participant else 'Add' }} Participant — PodScheduler{% endblock %}
+{% block page_title %}{{ 'Edit Participant' if participant else 'Add Participant' }}{% endblock %}
 
 {% block content %}
 <div style="max-width:560px;">
@@ -36,7 +36,7 @@
     </div>
     <div class="d-flex gap-2">
       {{ form.submit(class="btn btn-accent px-4") }}
-      <a href="{{ url_for('guests.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      <a href="{{ url_for('participants.index') }}" class="btn btn-outline-secondary">Cancel</a>
     </div>
   </form>
 </div>
