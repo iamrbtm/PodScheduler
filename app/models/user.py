@@ -19,6 +19,9 @@ class User(UserMixin, db.Model):
     hosted_podcasts = db.relationship(
         "Podcast", foreign_keys="Podcast.host_id", backref="host", lazy="dynamic"
     )
+    produced_podcasts = db.relationship(
+        "Podcast", foreign_keys="Podcast.producer_id", backref="producer", lazy="dynamic"
+    )
     created_podcasts = db.relationship(
         "Podcast", foreign_keys="Podcast.created_by_id", backref="creator", lazy="dynamic"
     )

@@ -25,13 +25,7 @@
         </div>
         <span class="badge badge-status-{{ podcast.status.value }} mt-1">{{ podcast.status.value }}</span>
       </div>
-
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
-          <i class="bi bi-person" style="color:rgba(255,255,255,.4);width:16px;"></i>
-          <span style="color:rgba(255,255,255,.5);">Host</span>
-          <span class="ms-auto fw-semibold">{{ podcast.host.username }}</span>
-        </div>
         <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
           <i class="bi bi-calendar3" style="color:rgba(255,255,255,.4);width:16px;"></i>
           <span style="color:rgba(255,255,255,.5);">Scheduled</span>
@@ -46,7 +40,6 @@
           <span class="ms-auto fw-semibold">{{ podcast.duration_minutes }} min</span>
         </div>
       </div>
-
       {% if podcast.description %}
       <div class="divider mt-3"></div>
       <p style="font-size:.85rem;color:rgba(255,255,255,.6);margin:0;">{{ podcast.description }}</p>
@@ -58,9 +51,59 @@
     </div>
   </div>
 
-  <!-- Participants section -->
-  <div class="section-title" style="padding-left:0;">
-    <i class="bi bi-star-fill me-1" style="color:#facc15;font-size:.9rem;"></i> Keynote Speaker
+  <!-- Crew card -->
+  <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+    <span class="section-title" style="padding:0;margin:0;">
+      <i class="bi bi-people me-1" style="font-size:.9rem;"></i> Crew
+    </span>
+    {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
+    <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.8rem;"
+            data-bs-toggle="offcanvas" data-bs-target="#crewSheet">
+      <i class="bi bi-pencil-square me-1"></i>Change
+    </button>
+    {% endif %}
+  </div>
+  <div class="card mb-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-mic" style="color:#7c5cfc;font-size:.85rem;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.7rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;">Host</div>
+            <div style="font-weight:600;font-size:.9rem;">{{ podcast.host.username }}</div>
+          </div>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-headphones" style="color:#38bdf8;font-size:.85rem;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.7rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;">Producer</div>
+            <div style="font-weight:600;font-size:.9rem;">
+              {% if podcast.producer %}{{ podcast.producer.username }}{% else %}<span style="color:rgba(255,255,255,.3);">Not assigned</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Keynote Speaker section -->
+  <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+    <span class="section-title" style="padding:0;margin:0;">
+      <i class="bi bi-star-fill me-1" style="color:#facc15;font-size:.9rem;"></i> Keynote Speaker
+    </span>
+    {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
+    <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.85rem;font-weight:700;"
+            data-bs-toggle="offcanvas" data-bs-target="#keynoteSheet"
+            {% if not available_participants %}disabled{% endif %}>
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    {% endif %}
   </div>
   <div class="card mb-3">
     {% set keynote_slots = podcast.keynote_slots %}
@@ -75,8 +118,18 @@
     {% endif %}
   </div>
 
-  <div class="section-title" style="padding-left:0;">
-    <i class="bi bi-people-fill me-1" style="color:#38bdf8;font-size:.9rem;"></i> Round Table
+  <!-- Round Table section -->
+  <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+    <span class="section-title" style="padding:0;margin:0;">
+      <i class="bi bi-people-fill me-1" style="color:#38bdf8;font-size:.9rem;"></i> Round Table
+    </span>
+    {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
+    <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.85rem;font-weight:700;"
+            data-bs-toggle="offcanvas" data-bs-target="#roundtableSheet"
+            {% if not available_participants %}disabled{% endif %}>
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    {% endif %}
   </div>
   <div class="card mb-3">
     {% set roundtable_slots = podcast.roundtable_slots %}
@@ -91,18 +144,11 @@
     {% endif %}
   </div>
 
-  <!-- Invite button -->
-  {% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
-  <button class="btn btn-accent btn-full mb-3" data-bs-toggle="offcanvas" data-bs-target="#inviteSheet">
-    <i class="bi bi-person-plus me-2"></i>Invite a Participant
-  </button>
-  {% endif %}
-
   <!-- Delete episode -->
   {% if current_user.is_admin() or current_user.has_permission('delete_podcast') %}
   <form method="POST" action="{{ url_for('podcasts.delete', podcast_id=podcast.id) }}" class="mb-4"
         onsubmit="return confirm('Delete this episode? This cannot be undone.');">
-    <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-outline-danger btn-full">
       <i class="bi bi-trash me-2"></i>Delete Episode
     </button>
@@ -110,63 +156,290 @@
   {% endif %}
 </div>
 
-<!-- Invite participant bottom sheet -->
-{% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
-<div class="offcanvas offcanvas-bottom" id="inviteSheet" tabindex="-1" aria-labelledby="inviteSheetLabel">
+<!-- ─── CREW SHEET ─── -->
+{% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
+<div class="offcanvas offcanvas-bottom" id="crewSheet" tabindex="-1" aria-labelledby="crewSheetLabel">
   <div class="offcanvas-header">
-    <h6 class="mb-0 fw-bold" id="inviteSheetLabel"><i class="bi bi-person-plus me-2"></i>Invite a Participant</h6>
+    <h6 class="mb-0 fw-bold" id="crewSheetLabel"><i class="bi bi-people me-2"></i>Change Crew</h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
   <div class="offcanvas-body">
-    <form method="POST" action="{{ url_for('podcasts.invite_participant', podcast_id=podcast.id) }}" novalidate>
-      {{ invite_form.hidden_tag() }}
-      {% if invite_form.participant_id.choices %}
+    <form method="POST" action="{{ url_for('podcasts.set_crew', podcast_id=podcast.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="mb-3">
-        {{ invite_form.participant_id.label(class="form-label") }}
-        {{ invite_form.participant_id(class="form-select") }}
-      </div>
-      <div class="mb-3">
-        {{ invite_form.participant_role.label(class="form-label") }}
-        {{ invite_form.participant_role(class="form-select") }}
-      </div>
-      <div class="mb-3">
-        {{ invite_form.email_template_id.label(class="form-label") }}
-        {{ invite_form.email_template_id(class="form-select") }}
-        <div class="form-text" style="font-size:.78rem;">
-          <a href="{{ url_for('email_templates.index') }}">Manage templates</a>
-        </div>
+        <label class="form-label" style="font-size:.85rem;color:rgba(255,255,255,.6);">Host</label>
+        <select name="host_id" class="form-select">
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if u.id == podcast.host_id %}selected{% endif %}>{{ u.username }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="mb-4">
-        {{ invite_form.message.label(class="form-label") }}
-        {{ invite_form.message(class="form-control", rows=3, placeholder="Add a personal note...") }}
+        <label class="form-label" style="font-size:.85rem;color:rgba(255,255,255,.6);">Producer</label>
+        <select name="producer_id" class="form-select">
+          <option value="0" {% if not podcast.producer_id %}selected{% endif %}>— Not assigned —</option>
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if u.id == podcast.producer_id %}selected{% endif %}>{{ u.username }}</option>
+          {% endfor %}
+        </select>
       </div>
-      {{ invite_form.submit(class="btn btn-accent btn-full") }}
-      {% else %}
-      <p style="color:rgba(255,255,255,.5);font-size:.88rem;margin:0;">
-        All participants already invited.
-        <a href="{{ url_for('participants.create') }}">Add a new participant?</a>
-      </p>
-      {% endif %}
+      <button type="submit" class="btn btn-accent btn-full">Save Crew</button>
     </form>
   </div>
 </div>
 {% endif %}
+
+<!-- ─── KEYNOTE PICKER SHEET ─── -->
+{% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
+<div class="offcanvas offcanvas-bottom" id="keynoteSheet" tabindex="-1" aria-labelledby="keynoteSheetLabel" style="max-height:85vh;">
+  <div class="offcanvas-header pb-2">
+    <h6 class="mb-0 fw-bold" id="keynoteSheetLabel"><i class="bi bi-star-fill me-2" style="color:#facc15;"></i>Add Keynote Speaker</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body d-flex flex-column" style="padding-top:0;overflow:hidden;">
+    <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="keynoteForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="role" value="keynote_speaker">
+
+      <!-- Search -->
+      <div class="mb-2 pt-2">
+        <input type="text" class="form-control picker-search" data-target="keynotePicker"
+               placeholder="Search by name or email…" autocomplete="off"
+               style="font-size:.9rem;">
+      </div>
+
+      <!-- Guest of field -->
+      <div class="mb-2">
+        <input type="text" name="guest_of" class="form-control" placeholder="Guest of (optional — who referred them?)"
+               style="font-size:.85rem;">
+      </div>
+
+      <!-- Participant list -->
+      <div id="keynotePicker" style="flex:1;overflow-y:auto;max-height:38vh;border:1px solid var(--ps-border);border-radius:12px;margin-bottom:12px;">
+        {% if available_participants %}
+        {% for p in available_participants %}
+        <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
+          <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="keynoteSheet"
+                 style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#7c5cfc;">
+            {{ p.name[0].upper() }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
+            <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
+          </div>
+        </label>
+        {% endfor %}
+        {% else %}
+        <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
+          No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-accent btn-full add-btn" data-sheet="keynoteSheet" disabled>
+        Select people above
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ─── ROUNDTABLE PICKER SHEET ─── -->
+<div class="offcanvas offcanvas-bottom" id="roundtableSheet" tabindex="-1" aria-labelledby="roundtableSheetLabel" style="max-height:85vh;">
+  <div class="offcanvas-header pb-2">
+    <h6 class="mb-0 fw-bold" id="roundtableSheetLabel"><i class="bi bi-people-fill me-2" style="color:#38bdf8;"></i>Add Round Table</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body d-flex flex-column" style="padding-top:0;overflow:hidden;">
+    <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="roundtableForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="role" value="roundtable">
+
+      <!-- Search -->
+      <div class="mb-2 pt-2">
+        <input type="text" class="form-control picker-search" data-target="roundtablePicker"
+               placeholder="Search by name or email…" autocomplete="off"
+               style="font-size:.9rem;">
+      </div>
+
+      <!-- Participant list -->
+      <div id="roundtablePicker" style="flex:1;overflow-y:auto;max-height:44vh;border:1px solid var(--ps-border);border-radius:12px;margin-bottom:12px;">
+        {% if available_participants %}
+        {% for p in available_participants %}
+        <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
+          <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="roundtableSheet"
+                 style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#38bdf8;">
+            {{ p.name[0].upper() }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
+            <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
+          </div>
+        </label>
+        {% endfor %}
+        {% else %}
+        <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
+          No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-accent btn-full add-btn" data-sheet="roundtableSheet" disabled>
+        Select people above
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ─── SLOT EDIT SHEET (keynote guest-of + actions) ─── -->
+<div class="offcanvas offcanvas-bottom" id="slotEditSheet" tabindex="-1" aria-labelledby="slotEditLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="slotEditLabel">Edit Participant</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <!-- Guest of form (shown for keynote only) -->
+    <div id="slotGuestOfSection" class="mb-3" style="display:none;">
+      <form method="POST" id="slotGuestOfForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label" style="font-size:.85rem;color:rgba(255,255,255,.6);">Guest of</label>
+        <input type="text" name="guest_of" id="slotGuestOfInput" class="form-control mb-3"
+               placeholder="Who referred or invited them?" style="font-size:.9rem;">
+        <button type="submit" class="btn btn-accent btn-full mb-3">Save</button>
+      </form>
+      <div class="divider mb-3"></div>
+    </div>
+
+    <!-- Send / Resend invite -->
+    {% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
+    <form method="POST" id="slotInviteForm" class="mb-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-full" id="slotInviteBtn"
+              style="background:rgba(124,92,252,.15);color:#7c5cfc;border:1px solid rgba(124,92,252,.3);">
+        <i class="bi bi-send me-2"></i><span id="slotInviteBtnText">Send Invitation</span>
+      </button>
+    </form>
+    {% endif %}
+
+    <!-- Remove -->
+    {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
+    <form method="POST" id="slotRemoveForm" onsubmit="return confirm('Remove this participant?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-full">
+        <i class="bi bi-x-circle me-2"></i>Remove from Episode
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.picker-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--ps-border);
+  transition: background .15s;
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:active { background: var(--ps-accent-dim); }
+.picker-item input[type="checkbox"]:checked ~ div { color: #fff; }
+</style>
+
+<script>
+(function () {
+  // ── Picker search ──────────────────────────────────────────────
+  document.querySelectorAll('.picker-search').forEach(function (input) {
+    input.addEventListener('input', function () {
+      var q = this.value.toLowerCase();
+      var containerId = this.dataset.target;
+      document.querySelectorAll('#' + containerId + ' .picker-item').forEach(function (item) {
+        var match = item.dataset.name.includes(q) || item.dataset.email.includes(q);
+        item.style.display = match ? '' : 'none';
+      });
+    });
+  });
+
+  // ── Checkbox counter → update Add button ──────────────────────
+  document.querySelectorAll('.picker-check').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      var sheetId = this.dataset.sheet;
+      var count = document.querySelectorAll('#' + sheetId + ' .picker-check:checked').length;
+      var btn = document.querySelector('#' + sheetId + ' .add-btn');
+      if (count > 0) {
+        btn.textContent = 'Add ' + count + ' Participant' + (count === 1 ? '' : 's');
+        btn.disabled = false;
+      } else {
+        btn.textContent = 'Select people above';
+        btn.disabled = true;
+      }
+    });
+  });
+
+  // ── Slot edit sheet ───────────────────────────────────────────
+  document.querySelectorAll('.slot-edit-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var ppId      = this.dataset.ppId;
+      var isKeynote = this.dataset.isKeynote === '1';
+      var guestOf   = this.dataset.guestOf || '';
+      var podcastId = this.dataset.podcastId;
+      var participantId = this.dataset.participantId;
+
+      // Guest of section
+      var guestSection = document.getElementById('slotGuestOfSection');
+      guestSection.style.display = isKeynote ? '' : 'none';
+      if (isKeynote) {
+        document.getElementById('slotGuestOfInput').value = guestOf;
+        document.getElementById('slotGuestOfForm').action =
+          '/podcasts/' + podcastId + '/participants/' + ppId + '/update';
+      }
+
+      // Invite form
+      var inviteForm = document.getElementById('slotInviteForm');
+      if (inviteForm) {
+        inviteForm.action = '/podcasts/' + podcastId + '/participants/' + participantId + '/send-invite';
+        var invited = this.dataset.invited === '1';
+        document.getElementById('slotInviteBtnText').textContent = invited ? 'Resend Invitation' : 'Send Invitation';
+      }
+
+      // Remove form
+      var removeForm = document.getElementById('slotRemoveForm');
+      if (removeForm) {
+        removeForm.action = '/podcasts/' + podcastId + '/participants/' + participantId + '/remove';
+      }
+
+      // Update sheet title
+      document.getElementById('slotEditLabel').textContent = this.dataset.name;
+
+      var sheet = bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('slotEditSheet'));
+      sheet.show();
+    });
+  });
+}());
+</script>
 {% endblock %}
 
 {% macro _participant_row(pp) %}
-<li class="list-group-item">
+<li class="list-group-item" style="padding:12px 14px;">
   <div class="d-flex align-items-center gap-3">
-    <div style="width:40px;height:40px;border-radius:12px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <i class="bi bi-person" style="color:#7c5cfc;"></i>
+    <div style="width:40px;height:40px;border-radius:12px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.85rem;color:#7c5cfc;">
+      {{ pp.participant.name[0].upper() }}
     </div>
     <div style="flex:1;min-width:0;">
       <div style="font-weight:600;font-size:.9rem;">{{ pp.participant.name }}</div>
       <div style="font-size:.75rem;color:rgba(255,255,255,.45);">{{ pp.participant.email }}</div>
+      {% if pp.participant_role.value == 'keynote_speaker' and pp.guest_of %}
+      <div style="font-size:.73rem;color:rgba(255,255,255,.35);margin-top:1px;">
+        <i class="bi bi-person-heart" style="font-size:.7rem;"></i> Guest of {{ pp.guest_of }}
+      </div>
+      {% endif %}
       {% if pp.invited_at %}
       <div style="font-size:.72rem;color:rgba(255,255,255,.3);">Invited {{ pp.invited_at.strftime('%b %d') }}</div>
       {% endif %}
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
       {% if pp.invitation_status.value == 'accepted' %}
         <span class="badge" style="background:#0a3a1e;color:#4ade80;">Accepted</span>
       {% elif pp.invitation_status.value == 'declined' %}
@@ -174,25 +447,18 @@
       {% else %}
         <span class="badge" style="background:#3d2506;color:#fb923c;">Pending</span>
       {% endif %}
-      <div class="d-flex gap-1">
-        {% if (current_user.is_admin() or current_user.has_permission('send_invitations')) and pp.invited_at %}
-        <form method="POST" action="{{ url_for('podcasts.resend_invitation', podcast_id=podcast.id, participant_id=pp.participant_id) }}">
-          <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
-          <button type="submit" class="btn btn-sm btn-outline-secondary" style="padding:4px 8px;" title="Resend">
-            <i class="bi bi-send" style="font-size:.75rem;"></i>
-          </button>
-        </form>
-        {% endif %}
-        {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id %}
-        <form method="POST" action="{{ url_for('podcasts.remove_participant', podcast_id=podcast.id, participant_id=pp.participant_id) }}"
-              onsubmit="return confirm('Remove {{ pp.participant.name }}?');">
-          <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
-          <button type="submit" class="btn btn-sm btn-outline-danger" style="padding:4px 8px;" title="Remove">
-            <i class="bi bi-x" style="font-size:.9rem;"></i>
-          </button>
-        </form>
-        {% endif %}
-      </div>
+      <!-- Edit / actions button -->
+      <button class="btn btn-sm slot-edit-btn"
+              style="color:rgba(255,255,255,.4);padding:4px 8px;"
+              data-pp-id="{{ pp.id }}"
+              data-podcast-id="{{ podcast.id }}"
+              data-participant-id="{{ pp.participant_id }}"
+              data-name="{{ pp.participant.name }}"
+              data-is-keynote="{{ '1' if pp.participant_role.value == 'keynote_speaker' else '0' }}"
+              data-guest-of="{{ pp.guest_of or '' }}"
+              data-invited="{{ '1' if pp.invited_at else '0' }}">
+        <i class="bi bi-three-dots-vertical"></i>
+      </button>
     </div>
   </div>
 </li>

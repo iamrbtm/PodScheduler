@@ -33,6 +33,7 @@ class PodcastParticipant(db.Model):
     )
     invitation_token = db.Column(db.String(64), unique=True, index=True)
     email_template_id = db.Column(db.Integer, db.ForeignKey("email_templates.id"), nullable=True)
+    guest_of = db.Column(db.String(200))
     message = db.Column(db.Text)
     invited_at = db.Column(db.DateTime)
     responded_at = db.Column(db.DateTime)

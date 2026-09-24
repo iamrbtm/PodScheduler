@@ -28,6 +28,7 @@ class Podcast(db.Model):
     )
 
     host_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    producer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
