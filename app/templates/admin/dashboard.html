@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Admin — PodScheduler{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-sm-4">
+    <div class="card stat-card text-center py-3">
+      <div class="stat-value text-warning">{{ users|length }}</div>
+      <div class="text-muted small">Total Users</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card stat-card text-center py-3">
+      <div class="stat-value text-info">{{ roles|length }}</div>
+      <div class="text-muted small">Roles</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card stat-card text-center py-3">
+      <div class="stat-value text-success">{{ users|selectattr('is_active')|list|length }}</div>
+      <div class="text-muted small">Active Users</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-people me-2"></i>Users</span>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('admin.create_user') }}" class="btn btn-sm btn-accent">+ New User</a>
+          <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-secondary">Manage</a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for u in users[:8] %}
+          <li class="list-group-item d-flex align-items-center gap-3">
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ u.username }}</div>
+              <div class="text-muted small">{{ u.email }}</div>
+            </div>
+            <span class="badge bg-primary">{{ u.role.name }}</span>
+            {% if not u.is_active %}<span class="badge bg-secondary">inactive</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-shield-lock me-2"></i>Roles & Permissions</span>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('admin.create_role') }}" class="btn btn-sm btn-accent">+ New Role</a>
+          <a href="{{ url_for('admin.roles') }}" class="btn btn-sm btn-outline-secondary">Manage</a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for r in roles %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold text-capitalize">{{ r.name }}</span>
+              <span class="badge bg-secondary">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
+            </div>
+            {% if r.description %}<div class="text-muted small">{{ r.description }}</div>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+Hi {{ guest.name }},
+
+{{ host.username }} has invited you to appear as a guest on their podcast.
+
+PODCAST: {{ podcast.title }}
+{% if podcast.topic %}TOPIC: {{ podcast.topic }}{% endif %}
+{% if podcast.scheduled_date %}DATE: {{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}{% endif %}
+DURATION: ~{{ podcast.duration_minutes }} minutes
+
+{% if personal_message %}
+"{{ personal_message }}"
+{% endif %}
+
+{% if podcast.description %}
+{{ podcast.description }}
+{% endif %}
+
+---
+
+To ACCEPT this invitation, visit:
+{{ accept_url }}
+
+To DECLINE this invitation, visit:
+{{ decline_url }}
+
+---
+Sent via PodScheduler

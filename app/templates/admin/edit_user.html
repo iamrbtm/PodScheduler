@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Edit User — Admin — PodScheduler{% endblock %}
+{% block page_title %}Edit User: {{ user.username }}{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Account Details</div>
+      <div class="card-body">
+        <div class="mb-3">
+          {{ form.username.label(class="form-label") }}
+          {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+          {% for e in form.username.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.email.label(class="form-label") }}
+          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+          {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.role_id.label(class="form-label") }}
+          {{ form.role_id(class="form-select") }}
+        </div>
+        <div class="mb-3">
+          <div class="form-check">
+            {{ form.is_active(class="form-check-input") }}
+            {{ form.is_active.label(class="form-check-label") }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Change Password</div>
+      <div class="card-body">
+        {{ form.new_password.label(class="form-label") }}
+        {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""), placeholder="Leave blank to keep current") }}
+        {% for e in form.new_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {{ form.submit(class="btn btn-accent px-4") }}
+      <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

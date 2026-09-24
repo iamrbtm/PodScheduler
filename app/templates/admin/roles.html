@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Roles — Admin — PodScheduler{% endblock %}
+{% block page_title %}Role Management{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin.create_role') }}" class="btn btn-accent btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>New Role
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  {% for r in roles %}
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <span class="fw-bold text-capitalize">{{ r.name }}</span>
+          <span class="badge bg-secondary ms-2">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
+        </div>
+        <div class="d-flex gap-1">
+          <a href="{{ url_for('admin.edit_role', role_id=r.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-pencil"></i>
+          </a>
+          {% if r.name != 'admin' and r.users.count() == 0 %}
+          <form method="POST" action="{{ url_for('admin.delete_role', role_id=r.id) }}"
+                onsubmit="return confirm('Delete role {{ r.name }}?');">
+            {{ csrf_token_input() }}
+            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        {% if r.description %}<p class="text-muted small mb-2">{{ r.description }}</p>{% endif %}
+        <div class="d-flex flex-wrap gap-1">
+          {% if r.permissions %}
+            {% for p in r.permissions.split(',') if p %}
+            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25">{{ p.replace('_', ' ') }}</span>
+            {% endfor %}
+          {% else %}
+          <span class="text-muted small">No permissions</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% macro csrf_token_input() %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% endmacro %}

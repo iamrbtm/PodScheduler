@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f4f4f4; margin:0; padding:20px; }
+    .container { max-width:600px; margin:0 auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+    .header { background:#1a1a2e; color:#fff; padding:32px; text-align:center; }
+    .header h1 { margin:0; font-size:1.5rem; }
+    .body { padding:32px; }
+    .podcast-card { background:#f8f9fa; border-radius:8px; padding:20px; margin:20px 0; }
+    .detail-row { display:flex; gap:8px; margin-bottom:8px; font-size:.9rem; }
+    .detail-label { color:#6c757d; min-width:90px; }
+    .btn-accept { display:inline-block; background:#198754; color:#fff; text-decoration:none; padding:14px 32px; border-radius:8px; font-weight:600; margin-right:12px; }
+    .btn-decline { display:inline-block; background:#dc3545; color:#fff; text-decoration:none; padding:14px 32px; border-radius:8px; font-weight:600; }
+    .footer { background:#f8f9fa; padding:20px 32px; text-align:center; font-size:.8rem; color:#6c757d; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div style="font-size:2rem;">🎙️</div>
+    <h1>You're Invited!</h1>
+    <p style="margin:8px 0 0; opacity:.75;">PodScheduler Guest Invitation</p>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ guest.name }}</strong>,</p>
+    <p>
+      <strong>{{ host.username }}</strong> would like to invite you as a guest on their upcoming podcast episode.
+    </p>
+
+    {% if personal_message %}
+    <blockquote style="border-left:4px solid #6d4aff; padding-left:16px; margin:16px 0; color:#555; font-style:italic;">
+      {{ personal_message }}
+    </blockquote>
+    {% endif %}
+
+    <div class="podcast-card">
+      <strong style="font-size:1.1rem;">{{ podcast.title }}</strong>
+      {% if podcast.topic %}<p style="color:#6c757d; margin:4px 0 12px;">{{ podcast.topic }}</p>{% endif %}
+
+      {% if podcast.scheduled_date %}
+      <div class="detail-row">
+        <span class="detail-label">📅 Date:</span>
+        <span>{{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+      </div>
+      {% endif %}
+      <div class="detail-row">
+        <span class="detail-label">⏱ Duration:</span>
+        <span>~{{ podcast.duration_minutes }} minutes</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">🎤 Host:</span>
+        <span>{{ host.username }}</span>
+      </div>
+      {% if podcast.description %}
+      <p style="margin-top:12px; font-size:.9rem; color:#555;">{{ podcast.description }}</p>
+      {% endif %}
+    </div>
+
+    <p>Please respond below:</p>
+    <div style="text-align:center; margin:32px 0;">
+      <a href="{{ accept_url }}" class="btn-accept">✓ Accept Invitation</a>
+      <a href="{{ decline_url }}" class="btn-decline">✗ Decline</a>
+    </div>
+    <p style="font-size:.85rem; color:#6c757d;">
+      These links are unique to you. No account required to respond.
+    </p>
+  </div>
+  <div class="footer">
+    Sent via PodScheduler · If you received this in error, please ignore it.
+  </div>
+</div>
+</body>
+</html>

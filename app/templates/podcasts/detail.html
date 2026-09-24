@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ podcast.title }} — PodScheduler{% endblock %}
+{% block page_title %}Podcast Detail{% endblock %}
+{% block topbar_actions %}
+  {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
+  <a href="{{ url_for('podcasts.edit', podcast_id=podcast.id) }}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-pencil me-1"></i>Edit
+  </a>
+  {% endif %}
+  {% if current_user.is_admin() or current_user.has_permission('delete_podcast') %}
+  <form method="POST" action="{{ url_for('podcasts.delete', podcast_id=podcast.id) }}" class="d-inline"
+        onsubmit="return confirm('Delete this podcast?');">
+    {{ form_csrf() }}
+    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+  </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Left col: podcast info -->
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+          <div>
+            <h4 class="fw-bold mb-1">{{ podcast.title }}</h4>
+            {% if podcast.topic %}<p class="text-muted mb-0">{{ podcast.topic }}</p>{% endif %}
+          </div>
+          <span class="badge badge-status-{{ podcast.status.value }} fs-6">{{ podcast.status.value }}</span>
+        </div>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4 text-muted">Host</dt>
+          <dd class="col-sm-8">{{ podcast.host.username }}</dd>
+
+          <dt class="col-sm-4 text-muted">Scheduled</dt>
+          <dd class="col-sm-8">
+            {% if podcast.scheduled_date %}{{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}
+            {% else %}<span class="text-muted">Not scheduled</span>{% endif %}
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Duration</dt>
+          <dd class="col-sm-8">{{ podcast.duration_minutes }} min</dd>
+
+          <dt class="col-sm-4 text-muted">Created by</dt>
+          <dd class="col-sm-8">{{ podcast.creator.username }} on {{ podcast.created_at.strftime('%b %d, %Y') }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    {% if podcast.description %}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Description</div>
+      <div class="card-body">{{ podcast.description }}</div>
+    </div>
+    {% endif %}
+
+    {% if podcast.notes %}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Production Notes</div>
+      <div class="card-body text-muted" style="white-space:pre-wrap;">{{ podcast.notes }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right col: guests -->
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people me-2"></i>Guests</span>
+        <span class="badge bg-secondary">{{ podcast.guest_count }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% set slots = podcast.guest_slots.all() %}
+        {% if slots %}
+        <ul class="list-group list-group-flush">
+          {% for pg in slots %}
+          <li class="list-group-item d-flex align-items-center gap-3">
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ pg.guest.name }}</div>
+              <div class="text-muted small">{{ pg.guest.email }}</div>
+              {% if pg.invited_at %}
+              <div class="text-muted" style="font-size:.7rem;">
+                Invited {{ pg.invited_at.strftime('%b %d, %Y') }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="d-flex flex-column align-items-end gap-1">
+              {% if pg.invitation_status.value == 'accepted' %}
+                <span class="badge bg-success">Accepted</span>
+              {% elif pg.invitation_status.value == 'declined' %}
+                <span class="badge bg-danger">Declined</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% endif %}
+
+              <div class="d-flex gap-1">
+                {% if (current_user.is_admin() or current_user.has_permission('send_invitations')) and pg.invited_at %}
+                <form method="POST" action="{{ url_for('podcasts.resend_invitation', podcast_id=podcast.id, guest_id=pg.guest_id) }}">
+                  {{ csrf_form(invite_form) }}
+                  <button type="submit" class="btn btn-sm btn-outline-secondary py-0" title="Resend invitation">
+                    <i class="bi bi-send" style="font-size:.75rem;"></i>
+                  </button>
+                </form>
+                {% endif %}
+                {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id %}
+                <form method="POST" action="{{ url_for('podcasts.remove_guest', podcast_id=podcast.id, guest_id=pg.guest_id) }}"
+                      onsubmit="return confirm('Remove this guest?');">
+                  {{ csrf_form(invite_form) }}
+                  <button type="submit" class="btn btn-sm btn-outline-danger py-0" title="Remove guest">
+                    <i class="bi bi-x" style="font-size:.75rem;"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-3 text-center text-muted small">No guests added yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Invite guest form -->
+    {% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-person-plus me-2"></i>Invite a Guest</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('podcasts.invite_guest', podcast_id=podcast.id) }}" novalidate>
+          {{ invite_form.hidden_tag() }}
+          <div class="mb-3">
+            {{ invite_form.guest_id.label(class="form-label") }}
+            {% if invite_form.guest_id.choices %}
+            {{ invite_form.guest_id(class="form-select") }}
+            {% else %}
+            <p class="text-muted small">All guests are already invited.
+              <a href="{{ url_for('guests.create') }}">Add a new guest?</a>
+            </p>
+            {% endif %}
+          </div>
+          {% if invite_form.guest_id.choices %}
+          <div class="mb-3">
+            {{ invite_form.message.label(class="form-label") }}
+            {{ invite_form.message(class="form-control", rows=2, placeholder="Add a personal note...") }}
+          </div>
+          {{ invite_form.submit(class="btn btn-accent w-100") }}
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% macro form_csrf() %}
+  <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
+{% endmacro %}
+
+{% macro csrf_form(f) %}
+  <input type="hidden" name="csrf_token" value="{{ f.csrf_token._value() }}">
+{% endmacro %}
