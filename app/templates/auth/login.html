@@ -1,35 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Sign In — PodScheduler{% endblock %}
 {% block content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: #0f0f1a;">
-  <div class="card shadow-lg" style="width:100%;max-width:420px;">
-    <div class="card-body p-5">
-      <div class="text-center mb-4">
-        <i class="bi bi-mic-fill text-primary" style="font-size:2.5rem;"></i>
-        <h3 class="mt-2 fw-bold">PodScheduler</h3>
-        <p class="text-muted small">Sign in to manage your podcasts</p>
+<div class="invite-page">
+  <div style="width:100%;max-width:400px;">
+    <div class="text-center mb-5">
+      <div style="width:64px;height:64px;background:rgba(124,92,252,.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="bi bi-mic-fill" style="font-size:1.8rem;color:#7c5cfc;"></i>
       </div>
-      <form method="POST" novalidate>
-        {{ form.hidden_tag() }}
-        <div class="mb-3">
-          {{ form.email.label(class="form-label") }}
-          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="you@example.com") }}
-          {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-        <div class="mb-3">
-          {{ form.password.label(class="form-label") }}
-          {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
-          {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-        <div class="mb-4">
-          <div class="form-check">
-            {{ form.remember_me(class="form-check-input") }}
-            {{ form.remember_me.label(class="form-check-label") }}
-          </div>
-        </div>
-        {{ form.submit(class="btn btn-accent w-100") }}
-      </form>
+      <h1 style="font-size:1.6rem;font-weight:800;margin-bottom:4px;">PodScheduler</h1>
+      <p style="color:rgba(255,255,255,.45);font-size:.9rem;margin:0;">Sign in to manage your podcasts</p>
     </div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""),
+           placeholder="you@example.com", autocomplete="email", inputmode="email") }}
+        {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-4">
+        {{ form.password.label(class="form-label") }}
+        <div style="position:relative;">
+          {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""),
+             placeholder="••••••••", autocomplete="current-password", id="pw-input") }}
+          <button type="button" onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:1rem;" id="pw-eye">
+            <i class="bi bi-eye" id="pw-eye-icon"></i>
+          </button>
+        </div>
+        {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-4 d-flex align-items-center gap-2">
+        {{ form.remember_me(class="form-check-input", style="margin-top:0;") }}
+        {{ form.remember_me.label(class="form-check-label", style="font-size:.88rem;") }}
+      </div>
+      {{ form.submit(class="btn btn-accent btn-full btn-lg") }}
+    </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function togglePw() {
+  const i = document.getElementById('pw-input');
+  const icon = document.getElementById('pw-eye-icon');
+  if (i.type === 'password') { i.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+  else { i.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+</script>
 {% endblock %}

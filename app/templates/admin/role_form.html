@@ -1,47 +1,53 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Edit' if role else 'New' }} Role — Admin — PodScheduler{% endblock %}
 {% block page_title %}{{ 'Edit Role' if role else 'New Role' }}{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.roles') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 
 {% block content %}
-<div style="max-width:540px;">
+<div class="page-pad">
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Role Details</div>
-      <div class="card-body">
-        <div class="mb-3">
+
+    <div class="section-title" style="padding-left:0;">Role Details</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
           {{ form.name.label(class="form-label") }}
-          {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+          {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g. producer") }}
           {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
         </div>
-        <div class="mb-0">
+        <div>
           {{ form.description.label(class="form-label") }}
-          {{ form.description(class="form-control") }}
+          {{ form.description(class="form-control", placeholder="Brief description of this role...") }}
         </div>
       </div>
     </div>
 
+    <div class="section-title" style="padding-left:0;">Permissions</div>
     <div class="card mb-4">
-      <div class="card-header fw-semibold">Permissions</div>
-      <div class="card-body">
+      <div class="card-body" style="padding:4px 16px;">
         {% set current_perms = role.permissions.split(',') if role and role.permissions else [] %}
-        {% for perm_key, perm_desc in all_permissions.items() %}
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" name="permissions"
-                 value="{{ perm_key }}" id="perm_{{ perm_key }}"
-                 {% if perm_key in current_perms %}checked{% endif %}>
-          <label class="form-check-label" for="perm_{{ perm_key }}">
-            <span class="fw-semibold">{{ perm_key.replace('_', ' ').title() }}</span>
-            <span class="text-muted small ms-1">— {{ perm_desc }}</span>
-          </label>
+        <div class="perm-grid">
+          {% for perm_key, perm_desc in all_permissions.items() %}
+          <div class="perm-row">
+            <input class="form-check-input" type="checkbox" name="permissions"
+                   value="{{ perm_key }}" id="perm_{{ perm_key }}"
+                   {% if perm_key in current_perms %}checked{% endif %}>
+            <label for="perm_{{ perm_key }}">
+              <span class="perm-key">{{ perm_key.replace('_', ' ').title() }}</span>
+              <span class="perm-desc">{{ perm_desc }}</span>
+            </label>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
     </div>
 
-    <div class="d-flex gap-2">
-      {{ form.submit(class="btn btn-accent px-4") }}
-      <a href="{{ url_for('admin.roles') }}" class="btn btn-outline-secondary">Cancel</a>
+    <div class="d-flex flex-column gap-2">
+      {{ form.submit(class="btn btn-accent btn-full") }}
+      <a href="{{ url_for('admin.roles') }}" class="btn btn-outline-secondary btn-full">Cancel</a>
     </div>
   </form>
 </div>

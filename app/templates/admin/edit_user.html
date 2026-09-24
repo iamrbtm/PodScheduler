@@ -1,47 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Edit User — Admin — PodScheduler{% endblock %}
-{% block page_title %}Edit User: {{ user.username }}{% endblock %}
+{% block page_title %}{{ user.username }}{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.users') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 
 {% block content %}
-<div style="max-width:520px;">
+<div class="page-pad">
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Account Details</div>
-      <div class="card-body">
-        <div class="mb-3">
+
+    <div class="section-title" style="padding-left:0;">Account Details</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
           {{ form.username.label(class="form-label") }}
           {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
           {% for e in form.username.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
         </div>
-        <div class="mb-3">
+        <div>
           {{ form.email.label(class="form-label") }}
-          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), inputmode="email") }}
           {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
         </div>
-        <div class="mb-3">
+        <div>
           {{ form.role_id.label(class="form-label") }}
           {{ form.role_id(class="form-select") }}
         </div>
-        <div class="mb-3">
-          <div class="form-check">
-            {{ form.is_active(class="form-check-input") }}
-            {{ form.is_active.label(class="form-check-label") }}
-          </div>
+        <div class="d-flex align-items-center gap-3" style="padding:4px 0;">
+          {{ form.is_active(class="form-check-input", style="width:2.5em;height:1.4em;") }}
+          {{ form.is_active.label(class="form-check-label", style="font-size:.9rem;") }}
         </div>
       </div>
     </div>
+
+    <div class="section-title" style="padding-left:0;">Change Password</div>
     <div class="card mb-4">
-      <div class="card-header fw-semibold">Change Password</div>
       <div class="card-body">
         {{ form.new_password.label(class="form-label") }}
-        {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""), placeholder="Leave blank to keep current") }}
+        {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""),
+           placeholder="Leave blank to keep current") }}
         {% for e in form.new_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
       </div>
     </div>
-    <div class="d-flex gap-2">
-      {{ form.submit(class="btn btn-accent px-4") }}
-      <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
+
+    <div class="d-flex flex-column gap-2">
+      {{ form.submit(class="btn btn-accent btn-full") }}
+      <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary btn-full">Cancel</a>
     </div>
   </form>
 </div>

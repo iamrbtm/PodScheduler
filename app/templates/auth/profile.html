@@ -1,50 +1,66 @@
 {% extends "base.html" %}
 {% block title %}Profile — PodScheduler{% endblock %}
 {% block page_title %}My Profile{% endblock %}
+
 {% block content %}
-<div class="row g-4" style="max-width:600px;">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header"><h5 class="mb-0">Account Info</h5></div>
-      <div class="card-body">
-        <dl class="row mb-0">
-          <dt class="col-sm-3">Username</dt>
-          <dd class="col-sm-9">{{ current_user.username }}</dd>
-          <dt class="col-sm-3">Email</dt>
-          <dd class="col-sm-9">{{ current_user.email }}</dd>
-          <dt class="col-sm-3">Role</dt>
-          <dd class="col-sm-9"><span class="badge bg-primary">{{ current_user.role.name }}</span></dd>
-          <dt class="col-sm-3">Member since</dt>
-          <dd class="col-sm-9">{{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else '—' }}</dd>
-        </dl>
+<div class="page-pad">
+  <!-- Avatar + name -->
+  <div style="display:flex;flex-direction:column;align-items:center;padding:20px 0 24px;">
+    <div style="width:72px;height:72px;border-radius:24px;background:rgba(124,92,252,.2);border:2px solid rgba(124,92,252,.4);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+      <i class="bi bi-person-fill" style="font-size:2rem;color:#7c5cfc;"></i>
+    </div>
+    <div style="font-size:1.2rem;font-weight:800;">{{ current_user.username }}</div>
+    <div style="font-size:.82rem;color:rgba(255,255,255,.45);">{{ current_user.email }}</div>
+    <span class="badge mt-2" style="background:rgba(124,92,252,.25);color:#a78bfa;border:1px solid rgba(124,92,252,.3);">
+      {{ current_user.role.name }}
+    </span>
+  </div>
+
+  <!-- Info card -->
+  <div class="card mb-4">
+    <div class="card-header">Account Info</div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="d-flex justify-content-between align-items-center" style="font-size:.88rem;">
+        <span style="color:rgba(255,255,255,.45);">Member since</span>
+        <span class="fw-semibold">{{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else '—' }}</span>
+      </div>
+      <div class="divider"></div>
+      <div class="d-flex justify-content-between align-items-center" style="font-size:.88rem;">
+        <span style="color:rgba(255,255,255,.45);">Role</span>
+        <span class="fw-semibold text-capitalize">{{ current_user.role.name }}</span>
       </div>
     </div>
   </div>
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header"><h5 class="mb-0">Change Password</h5></div>
-      <div class="card-body">
-        <form method="POST" novalidate>
-          {{ form.hidden_tag() }}
-          <div class="mb-3">
-            {{ form.current_password.label(class="form-label") }}
-            {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else "")) }}
-            {% for e in form.current_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="mb-3">
-            {{ form.new_password.label(class="form-label") }}
-            {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else "")) }}
-            {% for e in form.new_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="mb-3">
-            {{ form.confirm_password.label(class="form-label") }}
-            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
-            {% for e in form.confirm_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          {{ form.submit(class="btn btn-accent") }}
-        </form>
-      </div>
+
+  <!-- Change password -->
+  <div class="section-title" style="padding-left:0;">Change Password</div>
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="POST" novalidate style="display:flex;flex-direction:column;gap:14px;">
+        {{ form.hidden_tag() }}
+        <div>
+          {{ form.current_password.label(class="form-label") }}
+          {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else ""), placeholder="Current password") }}
+          {% for e in form.current_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.new_password.label(class="form-label") }}
+          {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""), placeholder="New password") }}
+          {% for e in form.new_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.confirm_password.label(class="form-label") }}
+          {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Confirm new password") }}
+          {% for e in form.confirm_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-accent btn-full") }}
+      </form>
     </div>
   </div>
+
+  <!-- Sign out -->
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-full">
+    <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+  </a>
 </div>
 {% endblock %}

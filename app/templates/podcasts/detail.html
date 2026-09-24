@@ -1,185 +1,198 @@
 {% extends "base.html" %}
 {% block title %}{{ podcast.title }} — PodScheduler{% endblock %}
-{% block page_title %}Episode Detail{% endblock %}
+{% block page_title %}{{ podcast.title | truncate(28, True) }}{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('podcasts.index') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 {% block topbar_actions %}
   {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
-  <a href="{{ url_for('podcasts.edit', podcast_id=podcast.id) }}" class="btn btn-sm btn-outline-primary">
-    <i class="bi bi-pencil me-1"></i>Edit
+  <a href="{{ url_for('podcasts.edit', podcast_id=podcast.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-pencil"></i>
   </a>
-  {% endif %}
-  {% if current_user.is_admin() or current_user.has_permission('delete_podcast') %}
-  <form method="POST" action="{{ url_for('podcasts.delete', podcast_id=podcast.id) }}" class="d-inline"
-        onsubmit="return confirm('Delete this episode?');">
-    <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
-    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
-  </form>
   {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="row g-4">
-  <!-- Left: episode info -->
-  <div class="col-lg-7">
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-          <div>
-            <h4 class="fw-bold mb-1">{{ podcast.title }}</h4>
-            {% if podcast.topic %}<p class="text-muted mb-0">{{ podcast.topic }}</p>{% endif %}
-          </div>
-          <span class="badge badge-status-{{ podcast.status.value }} fs-6">{{ podcast.status.value }}</span>
+<div class="page-pad">
+
+  <!-- Episode info card -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+        <div>
+          <h2 style="font-size:1.15rem;font-weight:800;margin:0 0 4px;">{{ podcast.title }}</h2>
+          {% if podcast.topic %}<p style="color:rgba(255,255,255,.55);font-size:.85rem;margin:0;">{{ podcast.topic }}</p>{% endif %}
         </div>
-        <dl class="row mb-0">
-          <dt class="col-sm-4 text-muted">Host</dt>
-          <dd class="col-sm-8">{{ podcast.host.username }}</dd>
-          <dt class="col-sm-4 text-muted">Scheduled</dt>
-          <dd class="col-sm-8">
-            {% if podcast.scheduled_date %}{{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}
-            {% else %}<span class="text-muted">Not scheduled</span>{% endif %}
-          </dd>
-          <dt class="col-sm-4 text-muted">Duration</dt>
-          <dd class="col-sm-8">{{ podcast.duration_minutes }} min</dd>
-          <dt class="col-sm-4 text-muted">Created by</dt>
-          <dd class="col-sm-8">{{ podcast.creator.username }} on {{ podcast.created_at.strftime('%b %d, %Y') }}</dd>
-        </dl>
+        <span class="badge badge-status-{{ podcast.status.value }} mt-1">{{ podcast.status.value }}</span>
       </div>
-    </div>
 
-    {% if podcast.description %}
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Description</div>
-      <div class="card-body">{{ podcast.description }}</div>
-    </div>
-    {% endif %}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
+          <i class="bi bi-person" style="color:rgba(255,255,255,.4);width:16px;"></i>
+          <span style="color:rgba(255,255,255,.5);">Host</span>
+          <span class="ms-auto fw-semibold">{{ podcast.host.username }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
+          <i class="bi bi-calendar3" style="color:rgba(255,255,255,.4);width:16px;"></i>
+          <span style="color:rgba(255,255,255,.5);">Scheduled</span>
+          <span class="ms-auto fw-semibold">
+            {% if podcast.scheduled_date %}{{ podcast.scheduled_date.strftime('%b %d, %Y · %I:%M %p') }}
+            {% else %}<span style="color:rgba(255,255,255,.35);">Not set</span>{% endif %}
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
+          <i class="bi bi-clock" style="color:rgba(255,255,255,.4);width:16px;"></i>
+          <span style="color:rgba(255,255,255,.5);">Duration</span>
+          <span class="ms-auto fw-semibold">{{ podcast.duration_minutes }} min</span>
+        </div>
+      </div>
 
-    {% if podcast.notes %}
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Production Notes</div>
-      <div class="card-body text-muted" style="white-space:pre-wrap;">{{ podcast.notes }}</div>
+      {% if podcast.description %}
+      <div class="divider mt-3"></div>
+      <p style="font-size:.85rem;color:rgba(255,255,255,.6);margin:0;">{{ podcast.description }}</p>
+      {% endif %}
+      {% if podcast.notes %}
+      <div class="divider mt-2"></div>
+      <p style="font-size:.8rem;color:rgba(255,255,255,.4);white-space:pre-wrap;margin:0;">{{ podcast.notes }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Participants section -->
+  <div class="section-title" style="padding-left:0;">
+    <i class="bi bi-star-fill me-1" style="color:#facc15;font-size:.9rem;"></i> Keynote Speaker
+  </div>
+  <div class="card mb-3">
+    {% set keynote_slots = podcast.keynote_slots %}
+    {% if keynote_slots %}
+    <ul class="list-group list-group-flush">
+      {% for pp in keynote_slots %}{{ _participant_row(pp) }}{% endfor %}
+    </ul>
+    {% else %}
+    <div class="card-body" style="text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;padding:20px;">
+      No keynote speaker yet
     </div>
     {% endif %}
   </div>
 
-  <!-- Right: participants -->
-  <div class="col-lg-5">
-    <!-- Keynote Speaker -->
-    <div class="card mb-3">
-      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-star me-2 text-warning"></i>Keynote Speaker</span>
-        <span class="badge bg-warning text-dark">{{ podcast.keynote_slots|length }}</span>
-      </div>
-      <div class="card-body p-0">
-        {% set keynote_slots = podcast.keynote_slots %}
-        {% if keynote_slots %}
-        <ul class="list-group list-group-flush">
-          {% for pp in keynote_slots %}
-          {{ _participant_row(pp) }}
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="p-3 text-center text-muted small">No keynote speaker yet.</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Round Table -->
-    <div class="card mb-3">
-      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-people me-2 text-info"></i>Round Table Participants</span>
-        <span class="badge bg-info text-dark">{{ podcast.roundtable_slots|length }}</span>
-      </div>
-      <div class="card-body p-0">
-        {% set roundtable_slots = podcast.roundtable_slots %}
-        {% if roundtable_slots %}
-        <ul class="list-group list-group-flush">
-          {% for pp in roundtable_slots %}
-          {{ _participant_row(pp) }}
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="p-3 text-center text-muted small">No round table participants yet.</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Invite form -->
-    {% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
-    <div class="card">
-      <div class="card-header fw-semibold"><i class="bi bi-person-plus me-2"></i>Invite a Participant</div>
-      <div class="card-body">
-        <form method="POST" action="{{ url_for('podcasts.invite_participant', podcast_id=podcast.id) }}" novalidate>
-          {{ invite_form.hidden_tag() }}
-          <div class="mb-3">
-            {{ invite_form.participant_id.label(class="form-label") }}
-            {% if invite_form.participant_id.choices %}
-            {{ invite_form.participant_id(class="form-select") }}
-            {% else %}
-            <p class="text-muted small">All participants already invited.
-              <a href="{{ url_for('participants.create') }}">Add new?</a>
-            </p>
-            {% endif %}
-          </div>
-          {% if invite_form.participant_id.choices %}
-          <div class="mb-3">
-            {{ invite_form.participant_role.label(class="form-label") }}
-            {{ invite_form.participant_role(class="form-select") }}
-          </div>
-          <div class="mb-3">
-            {{ invite_form.email_template_id.label(class="form-label") }}
-            {{ invite_form.email_template_id(class="form-select") }}
-            <div class="form-text">
-              <a href="{{ url_for('email_templates.index') }}" target="_blank">Manage templates</a>
-            </div>
-          </div>
-          <div class="mb-3">
-            {{ invite_form.message.label(class="form-label") }}
-            {{ invite_form.message(class="form-control", rows=2, placeholder="Add a personal note...") }}
-          </div>
-          {{ invite_form.submit(class="btn btn-accent w-100") }}
-          {% endif %}
-        </form>
-      </div>
+  <div class="section-title" style="padding-left:0;">
+    <i class="bi bi-people-fill me-1" style="color:#38bdf8;font-size:.9rem;"></i> Round Table
+  </div>
+  <div class="card mb-3">
+    {% set roundtable_slots = podcast.roundtable_slots %}
+    {% if roundtable_slots %}
+    <ul class="list-group list-group-flush">
+      {% for pp in roundtable_slots %}{{ _participant_row(pp) }}{% endfor %}
+    </ul>
+    {% else %}
+    <div class="card-body" style="text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;padding:20px;">
+      No round table participants yet
     </div>
     {% endif %}
+  </div>
+
+  <!-- Invite button -->
+  {% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
+  <button class="btn btn-accent btn-full mb-3" data-bs-toggle="offcanvas" data-bs-target="#inviteSheet">
+    <i class="bi bi-person-plus me-2"></i>Invite a Participant
+  </button>
+  {% endif %}
+
+  <!-- Delete episode -->
+  {% if current_user.is_admin() or current_user.has_permission('delete_podcast') %}
+  <form method="POST" action="{{ url_for('podcasts.delete', podcast_id=podcast.id) }}" class="mb-4"
+        onsubmit="return confirm('Delete this episode? This cannot be undone.');">
+    <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
+    <button type="submit" class="btn btn-outline-danger btn-full">
+      <i class="bi bi-trash me-2"></i>Delete Episode
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Invite participant bottom sheet -->
+{% if current_user.is_admin() or current_user.has_permission('send_invitations') %}
+<div class="offcanvas offcanvas-bottom" id="inviteSheet" tabindex="-1" aria-labelledby="inviteSheetLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="inviteSheetLabel"><i class="bi bi-person-plus me-2"></i>Invite a Participant</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form method="POST" action="{{ url_for('podcasts.invite_participant', podcast_id=podcast.id) }}" novalidate>
+      {{ invite_form.hidden_tag() }}
+      {% if invite_form.participant_id.choices %}
+      <div class="mb-3">
+        {{ invite_form.participant_id.label(class="form-label") }}
+        {{ invite_form.participant_id(class="form-select") }}
+      </div>
+      <div class="mb-3">
+        {{ invite_form.participant_role.label(class="form-label") }}
+        {{ invite_form.participant_role(class="form-select") }}
+      </div>
+      <div class="mb-3">
+        {{ invite_form.email_template_id.label(class="form-label") }}
+        {{ invite_form.email_template_id(class="form-select") }}
+        <div class="form-text" style="font-size:.78rem;">
+          <a href="{{ url_for('email_templates.index') }}">Manage templates</a>
+        </div>
+      </div>
+      <div class="mb-4">
+        {{ invite_form.message.label(class="form-label") }}
+        {{ invite_form.message(class="form-control", rows=3, placeholder="Add a personal note...") }}
+      </div>
+      {{ invite_form.submit(class="btn btn-accent btn-full") }}
+      {% else %}
+      <p style="color:rgba(255,255,255,.5);font-size:.88rem;margin:0;">
+        All participants already invited.
+        <a href="{{ url_for('participants.create') }}">Add a new participant?</a>
+      </p>
+      {% endif %}
+    </form>
   </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% macro _participant_row(pp) %}
-<li class="list-group-item d-flex align-items-center gap-3 py-2">
-  <div class="flex-grow-1">
-    <div class="fw-semibold">{{ pp.participant.name }}</div>
-    <div class="text-muted small">{{ pp.participant.email }}</div>
-    {% if pp.invited_at %}
-    <div class="text-muted" style="font-size:.7rem;">Invited {{ pp.invited_at.strftime('%b %d, %Y') }}</div>
-    {% endif %}
-  </div>
-  <div class="d-flex flex-column align-items-end gap-1">
-    {% if pp.invitation_status.value == 'accepted' %}
-      <span class="badge bg-success">Accepted</span>
-    {% elif pp.invitation_status.value == 'declined' %}
-      <span class="badge bg-danger">Declined</span>
-    {% else %}
-      <span class="badge bg-warning text-dark">Pending</span>
-    {% endif %}
-    <div class="d-flex gap-1">
-      {% if (current_user.is_admin() or current_user.has_permission('send_invitations')) and pp.invited_at %}
-      <form method="POST" action="{{ url_for('podcasts.resend_invitation', podcast_id=podcast.id, participant_id=pp.participant_id) }}">
-        <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
-        <button type="submit" class="btn btn-sm btn-outline-secondary py-0" title="Resend">
-          <i class="bi bi-send" style="font-size:.75rem;"></i>
-        </button>
-      </form>
+<li class="list-group-item">
+  <div class="d-flex align-items-center gap-3">
+    <div style="width:40px;height:40px;border-radius:12px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i class="bi bi-person" style="color:#7c5cfc;"></i>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:600;font-size:.9rem;">{{ pp.participant.name }}</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.45);">{{ pp.participant.email }}</div>
+      {% if pp.invited_at %}
+      <div style="font-size:.72rem;color:rgba(255,255,255,.3);">Invited {{ pp.invited_at.strftime('%b %d') }}</div>
       {% endif %}
-      {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id %}
-      <form method="POST" action="{{ url_for('podcasts.remove_participant', podcast_id=podcast.id, participant_id=pp.participant_id) }}"
-            onsubmit="return confirm('Remove this participant?');">
-        <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
-        <button type="submit" class="btn btn-sm btn-outline-danger py-0" title="Remove">
-          <i class="bi bi-x" style="font-size:.75rem;"></i>
-        </button>
-      </form>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+      {% if pp.invitation_status.value == 'accepted' %}
+        <span class="badge" style="background:#0a3a1e;color:#4ade80;">Accepted</span>
+      {% elif pp.invitation_status.value == 'declined' %}
+        <span class="badge" style="background:#3a0a0a;color:#f87171;">Declined</span>
+      {% else %}
+        <span class="badge" style="background:#3d2506;color:#fb923c;">Pending</span>
       {% endif %}
+      <div class="d-flex gap-1">
+        {% if (current_user.is_admin() or current_user.has_permission('send_invitations')) and pp.invited_at %}
+        <form method="POST" action="{{ url_for('podcasts.resend_invitation', podcast_id=podcast.id, participant_id=pp.participant_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
+          <button type="submit" class="btn btn-sm btn-outline-secondary" style="padding:4px 8px;" title="Resend">
+            <i class="bi bi-send" style="font-size:.75rem;"></i>
+          </button>
+        </form>
+        {% endif %}
+        {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id %}
+        <form method="POST" action="{{ url_for('podcasts.remove_participant', podcast_id=podcast.id, participant_id=pp.participant_id) }}"
+              onsubmit="return confirm('Remove {{ pp.participant.name }}?');">
+          <input type="hidden" name="csrf_token" value="{{ invite_form.csrf_token._value() }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger" style="padding:4px 8px;" title="Remove">
+            <i class="bi bi-x" style="font-size:.9rem;"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
     </div>
   </div>
 </li>

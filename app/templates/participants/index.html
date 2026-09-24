@@ -1,68 +1,55 @@
 {% extends "base.html" %}
 {% block title %}Participants — PodScheduler{% endblock %}
-{% block page_title %}Participant Directory{% endblock %}
+{% block page_title %}Participants{% endblock %}
 {% block topbar_actions %}
   {% if current_user.has_permission('manage_participants') or current_user.is_admin() %}
   <a href="{{ url_for('participants.create') }}" class="btn btn-accent btn-sm">
-    <i class="bi bi-person-plus me-1"></i>Add Participant
+    <i class="bi bi-plus-lg"></i>
   </a>
   {% endif %}
 {% endblock %}
 
 {% block content %}
+<div class="page-pad">
 {% if participants %}
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Company</th>
-        <th>Episodes</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in participants %}
-      <tr>
-        <td>
-          <div class="fw-semibold">{{ p.name }}</div>
-          {% if p.phone %}<div class="text-muted small">{{ p.phone }}</div>{% endif %}
-        </td>
-        <td><a href="mailto:{{ p.email }}" class="text-decoration-none">{{ p.email }}</a></td>
-        <td class="text-muted">{{ p.company or '—' }}</td>
-        <td>
-          {% set total = p.episode_slots.count() %}
-          {% if total > 0 %}
-          <span class="badge bg-secondary">{{ total }} episode{{ 's' if total != 1 }}</span>
-          {% else %}
-          <span class="text-muted small">None</span>
-          {% endif %}
-        </td>
-        <td class="text-end">
-          {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
-          <a href="{{ url_for('participants.edit', participant_id=p.id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i>
-          </a>
-          <form method="POST" action="{{ url_for('participants.delete', participant_id=p.id) }}" class="d-inline"
-                onsubmit="return confirm('Delete {{ p.name }}?');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-          </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  {% for p in participants %}
+  <div class="row-card" style="cursor:default;">
+    <div class="rc-icon"><i class="bi bi-person"></i></div>
+    <div class="rc-body">
+      <div class="rc-title">{{ p.name }}</div>
+      <div class="rc-sub">
+        {{ p.email }}
+        {% if p.company %} · {{ p.company }}{% endif %}
+      </div>
+      {% set total = p.episode_slots.count() %}
+      {% if total > 0 %}
+      <span class="badge bg-secondary mt-1">{{ total }} episode{{ 's' if total != 1 }}</span>
+      {% endif %}
+    </div>
+    <div class="rc-end">
+      {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
+      <a href="{{ url_for('participants.edit', participant_id=p.id) }}" class="btn btn-sm btn-outline-primary" style="padding:5px 10px;">
+        <i class="bi bi-pencil" style="font-size:.8rem;"></i>
+      </a>
+      <form method="POST" action="{{ url_for('participants.delete', participant_id=p.id) }}"
+            onsubmit="return confirm('Delete {{ p.name }}?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger" style="padding:5px 10px;">
+          <i class="bi bi-trash" style="font-size:.8rem;"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 {% else %}
-<div class="text-center py-5 text-muted">
-  <i class="bi bi-people" style="font-size:3rem;opacity:.3;"></i>
-  <p class="mt-2">No participants yet.</p>
+<div class="empty-state">
+  <i class="bi bi-people"></i>
+  <p>No participants yet.</p>
   {% if current_user.has_permission('manage_participants') or current_user.is_admin() %}
-  <a href="{{ url_for('participants.create') }}" class="btn btn-accent mt-1">Add first participant</a>
+  <a href="{{ url_for('participants.create') }}" class="btn btn-accent">Add first participant</a>
   {% endif %}
 </div>
 {% endif %}
+</div>
 {% endblock %}

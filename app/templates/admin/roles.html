@@ -1,53 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Roles — Admin — PodScheduler{% endblock %}
-{% block page_title %}Role Management{% endblock %}
+{% block page_title %}Roles{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.dashboard') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 {% block topbar_actions %}
   <a href="{{ url_for('admin.create_role') }}" class="btn btn-accent btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>New Role
+    <i class="bi bi-plus-lg"></i>
   </a>
 {% endblock %}
 
 {% block content %}
-<div class="row g-4">
+<div class="page-pad">
   {% for r in roles %}
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <div>
-          <span class="fw-bold text-capitalize">{{ r.name }}</span>
-          <span class="badge bg-secondary ms-2">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
-        </div>
-        <div class="d-flex gap-1">
-          <a href="{{ url_for('admin.edit_role', role_id=r.id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i>
-          </a>
-          {% if r.name != 'admin' and r.users.count() == 0 %}
-          <form method="POST" action="{{ url_for('admin.delete_role', role_id=r.id) }}"
-                onsubmit="return confirm('Delete role {{ r.name }}?');">
-            {{ csrf_token_input() }}
-            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-          </form>
-          {% endif %}
-        </div>
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <div>
+        <span class="fw-bold text-capitalize">{{ r.name }}</span>
+        <span class="badge bg-secondary ms-2">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
       </div>
-      <div class="card-body">
-        {% if r.description %}<p class="text-muted small mb-2">{{ r.description }}</p>{% endif %}
-        <div class="d-flex flex-wrap gap-1">
-          {% if r.permissions %}
-            {% for p in r.permissions.split(',') if p %}
-            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25">{{ p.replace('_', ' ') }}</span>
-            {% endfor %}
-          {% else %}
-          <span class="text-muted small">No permissions</span>
-          {% endif %}
-        </div>
+      <div class="d-flex gap-1">
+        <a href="{{ url_for('admin.edit_role', role_id=r.id) }}" class="btn btn-sm btn-outline-primary" style="padding:5px 10px;">
+          <i class="bi bi-pencil" style="font-size:.8rem;"></i>
+        </a>
+        {% if r.name != 'admin' and r.users.count() == 0 %}
+        <form method="POST" action="{{ url_for('admin.delete_role', role_id=r.id) }}"
+              onsubmit="return confirm('Delete role {{ r.name }}?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger" style="padding:5px 10px;">
+            <i class="bi bi-trash" style="font-size:.8rem;"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if r.description %}<p style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:10px;">{{ r.description }}</p>{% endif %}
+      <div class="d-flex flex-wrap gap-1">
+        {% if r.permissions %}
+          {% for p in r.permissions.split(',') if p %}
+          <span class="badge" style="background:rgba(124,92,252,.15);color:#a78bfa;border:1px solid rgba(124,92,252,.25);">{{ p.replace('_', ' ') }}</span>
+          {% endfor %}
+        {% else %}
+        <span style="font-size:.8rem;color:rgba(255,255,255,.3);">No permissions</span>
+        {% endif %}
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 {% endblock %}
-
-{% macro csrf_token_input() %}
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-{% endmacro %}

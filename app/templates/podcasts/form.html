@@ -1,68 +1,70 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Edit' if podcast else 'New' }} Podcast — PodScheduler{% endblock %}
-{% block page_title %}{{ 'Edit Podcast' if podcast else 'New Podcast' }}{% endblock %}
+{% block page_title %}{{ 'Edit Episode' if podcast else 'New Episode' }}{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('podcasts.index') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 
 {% block content %}
-<div style="max-width:700px;">
+<div class="page-pad">
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Basic Info</div>
-      <div class="card-body">
-        <div class="mb-3">
+
+    <div class="section-title" style="padding-left:0;">Basic Info</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
           {{ form.title.label(class="form-label") }}
-          {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+          {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="Episode title") }}
           {% for e in form.title.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
         </div>
-        <div class="mb-3">
+        <div>
           {{ form.topic.label(class="form-label") }}
-          {{ form.topic(class="form-control" + (" is-invalid" if form.topic.errors else "")) }}
+          {{ form.topic(class="form-control" + (" is-invalid" if form.topic.errors else ""), placeholder="Main topic or theme") }}
           {% for e in form.topic.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
         </div>
-        <div class="mb-3">
+        <div>
           {{ form.description.label(class="form-label") }}
-          {{ form.description(class="form-control", rows=3) }}
+          {{ form.description(class="form-control", rows=3, placeholder="Episode description...") }}
         </div>
       </div>
     </div>
 
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Scheduling</div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-7">
-            {{ form.scheduled_date.label(class="form-label") }}
-            {{ form.scheduled_date(class="form-control" + (" is-invalid" if form.scheduled_date.errors else "")) }}
-            {% for e in form.scheduled_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="col-md-5">
-            {{ form.duration_minutes.label(class="form-label") }}
-            {{ form.duration_minutes(class="form-control" + (" is-invalid" if form.duration_minutes.errors else "")) }}
-            {% for e in form.duration_minutes.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="col-md-6">
-            {{ form.host_id.label(class="form-label") }}
-            {{ form.host_id(class="form-select" + (" is-invalid" if form.host_id.errors else "")) }}
-            {% for e in form.host_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="col-md-6">
-            {{ form.status.label(class="form-label") }}
-            {{ form.status(class="form-select") }}
-          </div>
+    <div class="section-title" style="padding-left:0;">Scheduling</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          {{ form.scheduled_date.label(class="form-label") }}
+          {{ form.scheduled_date(class="form-control" + (" is-invalid" if form.scheduled_date.errors else "")) }}
+          {% for e in form.scheduled_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.duration_minutes.label(class="form-label") }}
+          {{ form.duration_minutes(class="form-control" + (" is-invalid" if form.duration_minutes.errors else ""), placeholder="e.g. 60") }}
+          {% for e in form.duration_minutes.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.host_id.label(class="form-label") }}
+          {{ form.host_id(class="form-select" + (" is-invalid" if form.host_id.errors else "")) }}
+          {% for e in form.host_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.status.label(class="form-label") }}
+          {{ form.status(class="form-select") }}
         </div>
       </div>
     </div>
 
+    <div class="section-title" style="padding-left:0;">Production Notes</div>
     <div class="card mb-4">
-      <div class="card-header fw-semibold">Production Notes</div>
       <div class="card-body">
         {{ form.notes(class="form-control", rows=4, placeholder="Internal notes, talking points, prep materials...") }}
       </div>
     </div>
 
-    <div class="d-flex gap-2">
-      {{ form.submit(class="btn btn-accent px-4") }}
-      <a href="{{ url_for('podcasts.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    <div class="d-flex flex-column gap-2">
+      {{ form.submit(class="btn btn-accent btn-full") }}
+      <a href="{{ url_for('podcasts.index') }}" class="btn btn-outline-secondary btn-full">Cancel</a>
     </div>
   </form>
 </div>

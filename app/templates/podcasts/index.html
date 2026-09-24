@@ -4,87 +4,49 @@
 {% block topbar_actions %}
   {% if current_user.has_permission('create_podcast') or current_user.is_admin() %}
   <a href="{{ url_for('podcasts.create') }}" class="btn btn-accent btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>New Podcast
+    <i class="bi bi-plus-lg"></i>
   </a>
   {% endif %}
 {% endblock %}
 
 {% block content %}
-<!-- Status filter tabs -->
-<ul class="nav nav-tabs mb-4">
-  <li class="nav-item">
-    <a class="nav-link {% if not current_status %}active{% endif %}" href="{{ url_for('podcasts.index') }}">All</a>
-  </li>
+<!-- Status filter pills -->
+<div class="filter-bar">
+  <a href="{{ url_for('podcasts.index') }}" class="filter-pill {% if not current_status %}active{% endif %}">All</a>
   {% for s in statuses %}
-  <li class="nav-item">
-    <a class="nav-link {% if current_status == s.value %}active{% endif %}" href="{{ url_for('podcasts.index', status=s.value) }}">
-      {{ s.value.title() }}
-    </a>
-  </li>
+  <a href="{{ url_for('podcasts.index', status=s.value) }}" class="filter-pill {% if current_status == s.value %}active{% endif %}">
+    {{ s.value.title() }}
+  </a>
   {% endfor %}
-</ul>
-
-{% if podcasts %}
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>Title</th>
-        <th>Topic</th>
-        <th>Host</th>
-        <th>Scheduled</th>
-        <th>Participants</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in podcasts %}
-      <tr>
-        <td>
-          <a href="{{ url_for('podcasts.detail', podcast_id=p.id) }}" class="text-decoration-none fw-semibold">{{ p.title }}</a>
-          {% if p.topic %}<div class="text-muted small">{{ p.topic }}</div>{% endif %}
-        </td>
-        <td class="text-muted small">{{ p.topic or '—' }}</td>
-        <td>{{ p.host.username }}</td>
-        <td class="text-nowrap small">
-          {% if p.scheduled_date %}{{ p.scheduled_date.strftime('%b %d, %Y %I:%M %p') }}
-          {% else %}<span class="text-muted">Unscheduled</span>{% endif %}
-        </td>
-        <td class="text-center">
-          <span class="badge bg-secondary">{{ p.participant_count }}</span>
-        </td>
-        <td><span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span></td>
-        <td class="text-end">
-          <a href="{{ url_for('podcasts.detail', podcast_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-eye"></i>
-          </a>
-          {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or p.host_id == current_user.id or p.created_by_id == current_user.id %}
-          <a href="{{ url_for('podcasts.edit', podcast_id=p.id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i>
-          </a>
-          {% endif %}
-          {% if current_user.is_admin() or current_user.has_permission('delete_podcast') %}
-          <form method="POST" action="{{ url_for('podcasts.delete', podcast_id=p.id) }}" class="d-inline"
-                onsubmit="return confirm('Delete this podcast?');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-          </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
+
+<div class="page-pad">
+{% if podcasts %}
+  {% for p in podcasts %}
+  <a href="{{ url_for('podcasts.detail', podcast_id=p.id) }}" class="row-card">
+    <div class="rc-icon"><i class="bi bi-collection-play"></i></div>
+    <div class="rc-body">
+      <div class="rc-title">{{ p.title }}</div>
+      <div class="rc-sub">
+        {{ p.host.username }}
+        {% if p.scheduled_date %} · {{ p.scheduled_date.strftime('%b %d') }}{% endif %}
+        · {{ p.participant_count }} participant{{ 's' if p.participant_count != 1 }}
+      </div>
+    </div>
+    <div class="rc-end">
+      <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span>
+      <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+    </div>
+  </a>
+  {% endfor %}
 {% else %}
-<div class="text-center py-5 text-muted">
-  <i class="bi bi-collection-play" style="font-size:3rem;opacity:.3;"></i>
-  <p class="mt-2">No podcasts found.</p>
+<div class="empty-state">
+  <i class="bi bi-collection-play"></i>
+  <p>No podcasts found.</p>
   {% if current_user.has_permission('create_podcast') or current_user.is_admin() %}
-  <a href="{{ url_for('podcasts.create') }}" class="btn btn-accent mt-1">Create your first podcast</a>
+  <a href="{{ url_for('podcasts.create') }}" class="btn btn-accent">Create your first episode</a>
   {% endif %}
 </div>
 {% endif %}
+</div>
 {% endblock %}
-

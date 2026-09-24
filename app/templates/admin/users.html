@@ -1,62 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Users — Admin — PodScheduler{% endblock %}
-{% block page_title %}User Management{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.dashboard') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
 {% block topbar_actions %}
   <a href="{{ url_for('admin.create_user') }}" class="btn btn-accent btn-sm">
-    <i class="bi bi-person-plus me-1"></i>New User
+    <i class="bi bi-plus-lg"></i>
   </a>
 {% endblock %}
 
 {% block content %}
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Last Login</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for u in users %}
-      <tr>
-        <td class="fw-semibold">{{ u.username }}</td>
-        <td class="text-muted">{{ u.email }}</td>
-        <td><span class="badge bg-primary text-capitalize">{{ u.role.name }}</span></td>
-        <td class="text-muted small">
-          {{ u.last_login.strftime('%b %d, %Y') if u.last_login else 'Never' }}
-        </td>
-        <td>
-          {% if u.is_active %}
-          <span class="badge bg-success">Active</span>
-          {% else %}
-          <span class="badge bg-secondary">Inactive</span>
-          {% endif %}
-        </td>
-        <td class="text-end">
-          <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i>
-          </a>
-          {% if not u.is_admin() %}
-          <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}" class="d-inline">
-            {{ csrf_token_input() }}
-            <button type="submit" class="btn btn-sm {{ 'btn-outline-warning' if u.is_active else 'btn-outline-success' }}"
-                    title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
-              <i class="bi {{ 'bi-pause' if u.is_active else 'bi-play' }}"></i>
-            </button>
-          </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="page-pad">
+  {% for u in users %}
+  <div class="row-card" style="cursor:default;">
+    <div class="rc-icon" style="background:rgba(250,204,21,.1);">
+      <i class="bi bi-person" style="color:#facc15;"></i>
+    </div>
+    <div class="rc-body">
+      <div class="rc-title">{{ u.username }}</div>
+      <div class="rc-sub">{{ u.email }}</div>
+      <div class="mt-1 d-flex gap-1 flex-wrap">
+        <span class="badge bg-primary text-capitalize">{{ u.role.name }}</span>
+        {% if u.is_active %}
+        <span class="badge" style="background:#0a3a1e;color:#4ade80;">Active</span>
+        {% else %}
+        <span class="badge bg-secondary">Inactive</span>
+        {% endif %}
+        {% if u.last_login %}
+        <span class="badge bg-secondary" style="font-weight:400;">Last: {{ u.last_login.strftime('%b %d') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="rc-end">
+      <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="btn btn-sm btn-outline-primary" style="padding:5px 10px;">
+        <i class="bi bi-pencil" style="font-size:.8rem;"></i>
+      </a>
+      {% if not u.is_admin() %}
+      <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm {{ 'btn-outline-warning' if u.is_active else 'btn-outline-success' }}" style="padding:5px 10px;"
+                title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
+          <i class="bi {{ 'bi-pause' if u.is_active else 'bi-play' }}" style="font-size:.8rem;"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}
-
-{% macro csrf_token_input() %}
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-{% endmacro %}

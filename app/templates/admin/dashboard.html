@@ -3,76 +3,85 @@
 {% block page_title %}Admin Panel{% endblock %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-  <div class="col-sm-4">
-    <div class="card stat-card text-center py-3">
-      <div class="stat-value text-warning">{{ users|length }}</div>
-      <div class="text-muted small">Total Users</div>
+<!-- Stats -->
+<div class="page-pad">
+  <div class="row g-2 mb-2">
+    <div class="col-4">
+      <div class="stat-pill">
+        <div class="stat-val" style="color:#facc15;">{{ users|length }}</div>
+        <div class="stat-lbl">Users</div>
+      </div>
     </div>
-  </div>
-  <div class="col-sm-4">
-    <div class="card stat-card text-center py-3">
-      <div class="stat-value text-info">{{ roles|length }}</div>
-      <div class="text-muted small">Roles</div>
+    <div class="col-4">
+      <div class="stat-pill">
+        <div class="stat-val" style="color:#38bdf8;">{{ roles|length }}</div>
+        <div class="stat-lbl">Roles</div>
+      </div>
     </div>
-  </div>
-  <div class="col-sm-4">
-    <div class="card stat-card text-center py-3">
-      <div class="stat-value text-success">{{ users|selectattr('is_active')|list|length }}</div>
-      <div class="text-muted small">Active Users</div>
+    <div class="col-4">
+      <div class="stat-pill">
+        <div class="stat-val" style="color:#4ade80;">{{ users|selectattr('is_active')|list|length }}</div>
+        <div class="stat-lbl">Active</div>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold"><i class="bi bi-people me-2"></i>Users</span>
-        <div class="d-flex gap-2">
-          <a href="{{ url_for('admin.create_user') }}" class="btn btn-sm btn-accent">+ New User</a>
-          <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-secondary">Manage</a>
-        </div>
-      </div>
-      <div class="card-body p-0">
-        <ul class="list-group list-group-flush">
-          {% for u in users[:8] %}
-          <li class="list-group-item d-flex align-items-center gap-3">
-            <div class="flex-grow-1">
-              <div class="fw-semibold">{{ u.username }}</div>
-              <div class="text-muted small">{{ u.email }}</div>
-            </div>
-            <span class="badge bg-primary">{{ u.role.name }}</span>
-            {% if not u.is_active %}<span class="badge bg-secondary">inactive</span>{% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
+<!-- Users section -->
+<div class="section-title">
+  Users
+  <a href="{{ url_for('admin.create_user') }}" class="btn btn-accent btn-sm ms-auto" style="float:right;margin-top:-4px;">
+    <i class="bi bi-plus-lg"></i>
+  </a>
+</div>
+<div class="page-pad mb-1">
+  {% for u in users[:6] %}
+  <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="row-card">
+    <div class="rc-icon" style="background:rgba(250,204,21,.1);">
+      <i class="bi bi-person" style="color:#facc15;"></i>
     </div>
-  </div>
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold"><i class="bi bi-shield-lock me-2"></i>Roles & Permissions</span>
-        <div class="d-flex gap-2">
-          <a href="{{ url_for('admin.create_role') }}" class="btn btn-sm btn-accent">+ New Role</a>
-          <a href="{{ url_for('admin.roles') }}" class="btn btn-sm btn-outline-secondary">Manage</a>
-        </div>
-      </div>
-      <div class="card-body p-0">
-        <ul class="list-group list-group-flush">
-          {% for r in roles %}
-          <li class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-semibold text-capitalize">{{ r.name }}</span>
-              <span class="badge bg-secondary">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
-            </div>
-            {% if r.description %}<div class="text-muted small">{{ r.description }}</div>{% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
+    <div class="rc-body">
+      <div class="rc-title">{{ u.username }}</div>
+      <div class="rc-sub">{{ u.email }}</div>
     </div>
-  </div>
+    <div class="rc-end">
+      <span class="badge bg-primary text-capitalize">{{ u.role.name }}</span>
+      {% if not u.is_active %}<span class="badge bg-secondary">inactive</span>{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+  {% if users|length > 6 %}
+  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:#7c5cfc;padding:8px;">
+    View all {{ users|length }} users →
+  </a>
+  {% else %}
+  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:rgba(255,255,255,.35);padding:8px;">
+    Manage all users
+  </a>
+  {% endif %}
+</div>
+
+<!-- Roles section -->
+<div class="section-title">
+  Roles & Permissions
+  <a href="{{ url_for('admin.create_role') }}" class="btn btn-accent btn-sm ms-auto" style="float:right;margin-top:-4px;">
+    <i class="bi bi-plus-lg"></i>
+  </a>
+</div>
+<div class="page-pad">
+  {% for r in roles %}
+  <a href="{{ url_for('admin.edit_role', role_id=r.id) }}" class="row-card">
+    <div class="rc-icon" style="background:rgba(56,189,248,.1);">
+      <i class="bi bi-shield-lock" style="color:#38bdf8;"></i>
+    </div>
+    <div class="rc-body">
+      <div class="rc-title text-capitalize">{{ r.name }}</div>
+      {% if r.description %}<div class="rc-sub">{{ r.description }}</div>{% endif %}
+    </div>
+    <div class="rc-end">
+      <span class="badge bg-secondary">{{ r.users.count() }} user{{ 's' if r.users.count() != 1 }}</span>
+    </div>
+  </a>
+  {% endfor %}
 </div>
 {% endblock %}
