@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Guests — PodScheduler{% endblock %}
+{% block page_title %}Guest Directory{% endblock %}
+{% block topbar_actions %}
+  {% if current_user.has_permission('manage_guests') or current_user.is_admin() %}
+  <a href="{{ url_for('guests.create') }}" class="btn btn-accent btn-sm">
+    <i class="bi bi-person-plus me-1"></i>Add Guest
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if guests %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Company</th>
+        <th>Invitations</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in guests %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ g.name }}</div>
+          {% if g.phone %}<div class="text-muted small">{{ g.phone }}</div>{% endif %}
+        </td>
+        <td><a href="mailto:{{ g.email }}" class="text-decoration-none">{{ g.email }}</a></td>
+        <td class="text-muted">{{ g.company or '—' }}</td>
+        <td>
+          {% set total = g.invitations.count() %}
+          {% if total > 0 %}
+          <span class="badge bg-secondary">{{ total }} invite{{ 's' if total != 1 }}</span>
+          {% else %}
+          <span class="text-muted small">None</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          {% if current_user.is_admin() or current_user.has_permission('manage_guests') %}
+          <a href="{{ url_for('guests.edit', guest_id=g.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <form method="POST" action="{{ url_for('guests.delete', guest_id=g.id) }}" class="d-inline"
+                onsubmit="return confirm('Delete guest {{ g.name }}?');">
+            {{ csrf_token_input() }}
+            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-people" style="font-size:3rem;opacity:.3;"></i>
+  <p class="mt-2">No guests yet.</p>
+  {% if current_user.has_permission('manage_guests') or current_user.is_admin() %}
+  <a href="{{ url_for('guests.create') }}" class="btn btn-accent mt-1">Add first guest</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% macro csrf_token_input() %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% endmacro %}

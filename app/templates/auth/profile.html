@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Profile — PodScheduler{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div class="row g-4" style="max-width:600px;">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Account Info</h5></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Username</dt>
+          <dd class="col-sm-9">{{ current_user.username }}</dd>
+          <dt class="col-sm-3">Email</dt>
+          <dd class="col-sm-9">{{ current_user.email }}</dd>
+          <dt class="col-sm-3">Role</dt>
+          <dd class="col-sm-9"><span class="badge bg-primary">{{ current_user.role.name }}</span></dd>
+          <dt class="col-sm-3">Member since</dt>
+          <dd class="col-sm-9">{{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else '—' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Change Password</h5></div>
+      <div class="card-body">
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.current_password.label(class="form-label") }}
+            {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else "")) }}
+            {% for e in form.current_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.new_password.label(class="form-label") }}
+            {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else "")) }}
+            {% for e in form.new_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.confirm_password.label(class="form-label") }}
+            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
+            {% for e in form.confirm_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          {{ form.submit(class="btn btn-accent") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

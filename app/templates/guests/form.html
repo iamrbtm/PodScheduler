@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if guest else 'Add' }} Guest — PodScheduler{% endblock %}
+{% block page_title %}{{ 'Edit Guest' if guest else 'Add Guest' }}{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+            {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+            {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.phone.label(class="form-label") }}
+            {{ form.phone(class="form-control") }}
+          </div>
+          <div class="col-12">
+            {{ form.company.label(class="form-label") }}
+            {{ form.company(class="form-control") }}
+          </div>
+          <div class="col-12">
+            {{ form.bio.label(class="form-label") }}
+            {{ form.bio(class="form-control", rows=4, placeholder="Short biography shown in invitations...") }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {{ form.submit(class="btn btn-accent px-4") }}
+      <a href="{{ url_for('guests.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

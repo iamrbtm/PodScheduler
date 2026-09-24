@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if role else 'New' }} Role — Admin — PodScheduler{% endblock %}
+{% block page_title %}{{ 'Edit Role' if role else 'New Role' }}{% endblock %}
+
+{% block content %}
+<div style="max-width:540px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Role Details</div>
+      <div class="card-body">
+        <div class="mb-3">
+          {{ form.name.label(class="form-label") }}
+          {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+          {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-0">
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Permissions</div>
+      <div class="card-body">
+        {% set current_perms = role.permissions.split(',') if role and role.permissions else [] %}
+        {% for perm_key, perm_desc in all_permissions.items() %}
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="permissions"
+                 value="{{ perm_key }}" id="perm_{{ perm_key }}"
+                 {% if perm_key in current_perms %}checked{% endif %}>
+          <label class="form-check-label" for="perm_{{ perm_key }}">
+            <span class="fw-semibold">{{ perm_key.replace('_', ' ').title() }}</span>
+            <span class="text-muted small ms-1">— {{ perm_desc }}</span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      {{ form.submit(class="btn btn-accent px-4") }}
+      <a href="{{ url_for('admin.roles') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

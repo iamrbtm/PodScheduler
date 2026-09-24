@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Uncomment the line below to ignore .env (add your own secrets)
+# .env
+.env.local
+.env.production
+
+*.db
+*.sqlite3
+
+instance/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+.DS_Store
