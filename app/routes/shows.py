@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Show
+from ..models import Show, DirectorySubmission, SubmissionStatus
 from ..forms import ShowForm
 from ..decorators import permission_required
 from ..storage import upload_cover_image, delete_object
+from ..directories import DIRECTORIES, DIRECTORIES_BY_KEY
 
 shows_bp = Blueprint("shows", __name__)
 
@@ -79,6 +80,50 @@ def edit(show_id):
         return redirect(url_for("shows.index"))
 
     return render_template("admin/shows/form.html", form=form, show=show)
+
+
+@shows_bp.route("/<int:show_id>/directories")
+@login_required
+@permission_required("manage_shows")
+def directories(show_id):
+    show = Show.query.get_or_404(show_id)
+    submissions = {s.directory_key: s for s in show.directory_submissions}
+    rows = []
+    for d in DIRECTORIES:
+        submission = submissions.get(d["key"])
+        rows.append({
+            **d,
+            "status": submission.status.value if submission else SubmissionStatus.NOT_SUBMITTED.value,
+            "submitted_at": submission.submitted_at if submission else None,
+        })
+    return render_template("admin/shows/directories.html", show=show, rows=rows)
+
+
+@shows_bp.route("/<int:show_id>/directories/<key>", methods=["POST"])
+@login_required
+@permission_required("manage_shows")
+def update_directory_status(show_id, key):
+    show = Show.query.get_or_404(show_id)
+    if key not in DIRECTORIES_BY_KEY:
+        abort(404)
+
+    status_value = request.form.get("status")
+    try:
+        status = SubmissionStatus(status_value)
+    except ValueError:
+        flash("Invalid status.", "danger")
+        return redirect(url_for("shows.directories", show_id=show_id))
+
+    submission = DirectorySubmission.query.filter_by(show_id=show_id, directory_key=key).first()
+    if not submission:
+        submission = DirectorySubmission(show_id=show_id, directory_key=key)
+        db.session.add(submission)
+
+    submission.mark(status)
+    submission.updated_by_id = current_user.id
+    db.session.commit()
+    flash(f"{DIRECTORIES_BY_KEY[key]['name']} marked as {status.value.replace('_', ' ')}.", "success")
+    return redirect(url_for("shows.directories", show_id=show_id))
 
 
 @shows_bp.route("/<int:show_id>/delete", methods=["POST"])

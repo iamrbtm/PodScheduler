@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Directories — {{ show.title }}{% endblock %}
+{% block page_title %}Directories{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('shows.index') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="page-pad">
+
+  <!-- Feed URL card -->
+  <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+    <div class="card-body" style="padding:12px 16px;">
+      <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Your public feed URL</div>
+      <div id="feedUrlText" style="font-size:.85rem;font-weight:600;word-break:break-all;margin-bottom:8px;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
+      <button type="button" class="btn btn-sm" style="background:rgba(124,92,252,.15);color:#7c5cfc;"
+              onclick="navigator.clipboard.writeText(document.getElementById('feedUrlText').textContent.trim())">
+        <i class="bi bi-clipboard me-1"></i>Copy
+      </button>
+    </div>
+  </div>
+
+  <p style="font-size:.8rem;color:rgba(255,255,255,.45);margin-bottom:16px;">
+    Submit your feed URL to each directory once. After that, new published episodes appear on all of them
+    automatically — there's nothing to click per episode. Check them off as you go.
+  </p>
+
+  {% for d in rows %}
+  <button type="button" class="row-card directory-row" style="width:100%;border:none;text-align:left;"
+          data-name="{{ d.name }}" data-note="{{ d.note }}"
+          data-submit-url="{{ d.submit_url }}" data-status="{{ d.status }}"
+          data-action="{{ url_for('shows.update_directory_status', show_id=show.id, key=d.key) }}">
+    <div class="rc-icon"><i class="bi bi-broadcast"></i></div>
+    <div class="rc-body">
+      <div class="rc-title">{{ d.name }}</div>
+      <div class="rc-sub">{{ d.note | truncate(60, True) }}</div>
+    </div>
+    <div class="rc-end">
+      {% if d.status == 'live' %}
+      <span class="badge" style="background:#0a3a1e;color:#4ade80;">Live</span>
+      {% elif d.status == 'submitted' %}
+      <span class="badge" style="background:#1e2f6e;color:#93c5fd;">Submitted</span>
+      {% else %}
+      <span class="badge" style="background:#3a3a4a;color:#aaa;">Not submitted</span>
+      {% endif %}
+      <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+    </div>
+  </button>
+  {% endfor %}
+
+</div>
+
+<!-- ─── DIRECTORY DETAIL SHEET ─── -->
+<div class="offcanvas offcanvas-bottom" id="directorySheet" tabindex="-1" aria-labelledby="directorySheetLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="directorySheetLabel">Directory</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p id="directoryNote" style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:16px;"></p>
+    <a id="directorySubmitLink" href="#" target="_blank" rel="noopener" class="btn btn-full mb-3"
+       style="background:rgba(124,92,252,.15);color:#7c5cfc;border:1px solid rgba(124,92,252,.3);">
+      <i class="bi bi-box-arrow-up-right me-2"></i>Open Submission Page
+    </a>
+    <form method="POST" id="directoryStatusForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" style="font-size:.82rem;color:rgba(255,255,255,.5);">Status</label>
+      <select name="status" id="directoryStatusSelect" class="form-select mb-3">
+        <option value="not_submitted">Not submitted</option>
+        <option value="submitted">Submitted</option>
+        <option value="live">Live</option>
+      </select>
+      <button type="submit" class="btn btn-accent btn-full">Save</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.directory-row').forEach(function (row) {
+  row.addEventListener('click', function () {
+    document.getElementById('directorySheetLabel').textContent = this.dataset.name;
+    document.getElementById('directoryNote').textContent = this.dataset.note;
+    document.getElementById('directorySubmitLink').href = this.dataset.submitUrl;
+    document.getElementById('directoryStatusSelect').value = this.dataset.status;
+    document.getElementById('directoryStatusForm').action = this.dataset.action;
+    var sheet = bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('directorySheet'));
+    sheet.show();
+  });
+});
+</script>
+{% endblock %}
