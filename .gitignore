@@ -6,6 +6,10 @@ dist/
 build/
 .eggs/
 
+# uv
+.venv/
+.python-version
+
 # Uncomment the line below to ignore .env (add your own secrets)
 # .env
 .env.local
