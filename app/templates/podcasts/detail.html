@@ -51,6 +51,37 @@
     </div>
   </div>
 
+  <!-- Episode audio card -->
+  {% set can_edit = current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
+  <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+    <span class="section-title" style="padding:0;margin:0;">
+      <i class="bi bi-file-earmark-music me-1" style="font-size:.9rem;"></i> Episode Audio
+    </span>
+    {% if can_edit %}
+    <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.8rem;"
+            data-bs-toggle="offcanvas" data-bs-target="#audioSheet">
+      <i class="bi bi-{{ 'arrow-repeat' if podcast.has_audio else 'upload' }} me-1"></i>{{ 'Replace' if podcast.has_audio else 'Upload' }}
+    </button>
+    {% endif %}
+  </div>
+  <div class="card mb-3">
+    {% if podcast.has_audio %}
+    <div class="card-body" style="padding:14px 16px;">
+      <audio controls preload="none" style="width:100%;margin-bottom:10px;">
+        <source src="{{ podcast.audio_url }}">
+      </audio>
+      <div style="display:flex;gap:16px;font-size:.78rem;color:rgba(255,255,255,.45);">
+        {% if podcast.audio_duration_display %}<span><i class="bi bi-clock"></i> {{ podcast.audio_duration_display }}</span>{% endif %}
+        {% if podcast.audio_file_size %}<span><i class="bi bi-hdd"></i> {{ (podcast.audio_file_size / 1048576) | round(1) }} MB</span>{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-body" style="text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;padding:20px;">
+      No audio uploaded yet
+    </div>
+    {% endif %}
+  </div>
+
   <!-- Crew card -->
   <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
     <span class="section-title" style="padding:0;margin:0;">
@@ -155,6 +186,26 @@
   </form>
   {% endif %}
 </div>
+
+<!-- ─── AUDIO UPLOAD SHEET ─── -->
+{% if can_edit %}
+<div class="offcanvas offcanvas-bottom" id="audioSheet" tabindex="-1" aria-labelledby="audioSheetLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="audioSheetLabel"><i class="bi bi-file-earmark-music me-2"></i>{{ 'Replace' if podcast.has_audio else 'Upload' }} Episode Audio</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form method="POST" action="{{ url_for('podcasts.upload_audio_file', podcast_id=podcast.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <input type="file" name="audio_file" class="form-control" accept=".mp3,.m4a,.wav,.aac,.ogg" required>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">MP3, M4A, WAV, AAC, or OGG.</div>
+      </div>
+      <button type="submit" class="btn btn-accent btn-full">Upload</button>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <!-- ─── CREW SHEET ─── -->
 {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}

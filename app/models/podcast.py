@@ -31,6 +31,14 @@ class Podcast(db.Model):
     producer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     show_id = db.Column(db.Integer, db.ForeignKey("shows.id"), nullable=True)
+
+    audio_object_key = db.Column(db.String(500))
+    audio_url = db.Column(db.String(500))
+    audio_duration_seconds = db.Column(db.Integer)
+    audio_file_size = db.Column(db.Integer)
+    episode_number = db.Column(db.Integer)
+    season_number = db.Column(db.Integer)
+    published_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -60,6 +68,17 @@ class Podcast(db.Model):
     @property
     def participant_count(self):
         return self.participant_slots.count()
+
+    @property
+    def has_audio(self):
+        return bool(self.audio_url)
+
+    @property
+    def audio_duration_display(self):
+        if not self.audio_duration_seconds:
+            return None
+        minutes, seconds = divmod(self.audio_duration_seconds, 60)
+        return f"{minutes}:{seconds:02d}"
 
     def __repr__(self):
         return f"<Podcast {self.title}>"
