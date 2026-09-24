@@ -227,7 +227,7 @@ function refreshPreview(b, el) {
   const p = el.querySelector('.blk-preview');
   if (!p) return;
   const safe = s => (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, (_,k) => `<span style="color:#a78bfa;font-family:monospace;font-size:.75em;">{{${k}}}</span>`);
+  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, function(_,k){ return '<span style="color:#a78bfa;font-family:monospace;font-size:.75em;">{{' + k + '}}</span>'; });
   switch (b.type) {
     case 'header':     p.innerHTML = `<div class="preview-header">${hl(b.content)}</div>`; break;
     case 'text':       p.innerHTML = `<div class="preview-text">${hl(b.content)}</div>`; break;
