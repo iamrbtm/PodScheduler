@@ -25,6 +25,7 @@ def create_app(config_name=None):
     from .routes.invitations import invitations_bp
     from .routes.email_templates import email_templates_bp
     from .routes.shows import shows_bp
+    from .routes.feed import feed_bp
     from .routes.main import main_bp
 
     app.register_blueprint(main_bp)
@@ -35,6 +36,7 @@ def create_app(config_name=None):
     app.register_blueprint(invitations_bp, url_prefix="/invitations")
     app.register_blueprint(email_templates_bp, url_prefix="/admin/email-templates")
     app.register_blueprint(shows_bp, url_prefix="/admin/shows")
+    app.register_blueprint(feed_bp)
 
     _register_cli(app)
     _register_mail_loader(app)

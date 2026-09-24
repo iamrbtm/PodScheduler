@@ -14,7 +14,7 @@
     <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
       <div class="card-body" style="padding:12px 16px;">
         <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Public feed URL</div>
-        <div style="font-size:.85rem;font-weight:600;word-break:break-all;">{{ request.url_root.rstrip('/') }}/feed/{{ show.feed_slug }}.xml</div>
+        <div style="font-size:.85rem;font-weight:600;word-break:break-all;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
       </div>
     </div>
     {% endif %}
