@@ -132,7 +132,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
   {% endfor %}
-  {% block content %}{% endblock %}
+  {{ self.content() }}
 </div>
 {% endif %}
 
