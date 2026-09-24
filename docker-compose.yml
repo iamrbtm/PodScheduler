@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   web:
     build: .
@@ -11,6 +9,8 @@ services:
       - DATABASE_URL=postgresql://podscheduler:podscheduler@db:5432/podscheduler
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     volumes:
       - .:/app
@@ -31,5 +31,68 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # S3-compatible object storage for episode audio files.
+  # Directories (Apple, Spotify, etc.) fetch enclosure URLs directly from
+  # here via the `caddy` reverse proxy, so this must end up reachable at
+  # your public domain — see PUBLIC_BASE_URL in .env.
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-podscheduler}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme123456}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # One-time bucket bootstrap: creates the audio bucket and makes it
+  # publicly readable (episode audio + RSS feed enclosures must be
+  # fetchable by directory crawlers without auth). Exits after running.
+  minio-init:
+    image: minio/mc:RELEASE.2024-10-13T09-55-04Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-podscheduler}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme123456}
+      MINIO_BUCKET: ${MINIO_BUCKET:-podscheduler-media}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
+      mc mb -p local/\"$$MINIO_BUCKET\" &&
+      mc anonymous set download local/\"$$MINIO_BUCKET\"
+      "
+    restart: "no"
+
+  # Reverse proxy + automatic HTTPS for the public domain. Routes
+  # /media/* to MinIO (audio files) and everything else to the Flask app
+  # (including /feed/<slug>.xml). Requires PUBLIC_DOMAIN in .env and DNS
+  # already pointed at this host — see README/CLAUDE.md distribution notes.
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
+      MINIO_BUCKET: ${MINIO_BUCKET:-podscheduler-media}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - minio
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

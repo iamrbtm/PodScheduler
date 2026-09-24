@@ -23,6 +23,13 @@ class BaseConfig:
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "changeme123")
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 
+    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
+    MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "podscheduler")
+    MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "changeme123456")
+    MINIO_BUCKET = os.getenv("MINIO_BUCKET", "podscheduler-media")
+
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost").rstrip("/")
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

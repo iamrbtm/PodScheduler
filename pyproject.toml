@@ -17,6 +17,8 @@ dependencies = [
     "itsdangerous==2.2.0",
     "email-validator==2.2.0",
     "gunicorn==22.0.0",
+    "boto3==1.35.36",
+    "mutagen==1.47.0",
 ]
 
 [tool.uv]
