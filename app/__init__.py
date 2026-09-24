@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from .extensions import db, login_manager, mail, migrate
+from .extensions import db, login_manager, mail, migrate, csrf
 from .config import config_by_name
 
 
@@ -16,6 +16,7 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
 
     from .routes.auth import auth_bp
     from .routes.admin import admin_bp
