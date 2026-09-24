@@ -61,6 +61,23 @@
   {% endif %}
 </div>
 
+<!-- System section -->
+<div class="section-title">System</div>
+<div class="page-pad mb-1">
+  <a href="{{ url_for('admin.mail_settings') }}" class="row-card">
+    <div class="rc-icon" style="background:rgba(74,222,128,.08);">
+      <i class="bi bi-envelope-at" style="color:#4ade80;"></i>
+    </div>
+    <div class="rc-body">
+      <div class="rc-title">Mail Settings</div>
+      <div class="rc-sub">SMTP server, credentials, sender address</div>
+    </div>
+    <div class="rc-end">
+      <i class="bi bi-chevron-right" style="color:rgba(255,255,255,.2);"></i>
+    </div>
+  </a>
+</div>
+
 <!-- Roles section -->
 <div class="section-title">
   Roles & Permissions

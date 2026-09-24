@@ -35,8 +35,35 @@ def create_app(config_name=None):
     app.register_blueprint(email_templates_bp, url_prefix="/admin/email-templates")
 
     _register_cli(app)
+    _register_mail_loader(app)
 
     return app
+
+
+def _register_mail_loader(app):
+    """Load mail settings from DB into app.config on first request per worker."""
+    @app.before_request
+    def _load_mail_settings():
+        if getattr(app, "_mail_settings_loaded", False):
+            return
+        app._mail_settings_loaded = True
+        try:
+            from .models.mail_settings import MailSettings
+            settings = MailSettings.query.first()
+            if settings:
+                app.config.update(
+                    MAIL_SERVER=settings.mail_server,
+                    MAIL_PORT=settings.mail_port,
+                    MAIL_USE_TLS=settings.mail_use_tls,
+                    MAIL_USE_SSL=settings.mail_use_ssl,
+                    MAIL_USERNAME=settings.mail_username,
+                    MAIL_PASSWORD=settings.mail_password,
+                    MAIL_DEFAULT_SENDER=settings.mail_default_sender or app.config.get("MAIL_DEFAULT_SENDER"),
+                    MAIL_SUPPRESS_SEND=settings.mail_suppress_send,
+                )
+                mail.init_app(app)
+        except Exception:
+            pass
 
 
 def _register_cli(app):
