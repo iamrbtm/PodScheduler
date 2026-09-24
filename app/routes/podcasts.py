@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant
+from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant, Show
 from ..models.podcast_participant import InvitationStatus, ParticipantRole
 from ..forms import PodcastForm
 from ..decorators import permission_required
@@ -40,6 +40,7 @@ def index():
 def create():
     form = PodcastForm()
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
+    form.show_id.choices = [(0, "— No show —")] + [(s.id, s.title) for s in Show.query.order_by(Show.title).all()]
 
     if form.validate_on_submit():
         podcast = Podcast(
@@ -51,6 +52,7 @@ def create():
             duration_minutes=form.duration_minutes.data,
             status=PodcastStatus(form.status.data),
             host_id=form.host_id.data,
+            show_id=form.show_id.data or None,
             created_by_id=current_user.id,
         )
         db.session.add(podcast)
@@ -92,8 +94,11 @@ def edit(podcast_id):
 
     form = PodcastForm(obj=podcast)
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
+    form.show_id.choices = [(0, "— No show —")] + [(s.id, s.title) for s in Show.query.order_by(Show.title).all()]
     if podcast.status:
         form.status.data = podcast.status.value if isinstance(podcast.status, PodcastStatus) else podcast.status
+    if request.method == "GET":
+        form.show_id.data = podcast.show_id or 0
 
     if form.validate_on_submit():
         podcast.title = form.title.data
@@ -104,6 +109,7 @@ def edit(podcast_id):
         podcast.duration_minutes = form.duration_minutes.data
         podcast.status = PodcastStatus(form.status.data)
         podcast.host_id = form.host_id.data
+        podcast.show_id = form.show_id.data or None
         db.session.commit()
         flash("Episode updated.", "success")
         return redirect(url_for("podcasts.detail", podcast_id=podcast.id))

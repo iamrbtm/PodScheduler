@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Shows — PodScheduler{% endblock %}
+{% block page_title %}Shows{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.dashboard') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('shows.create') }}" class="btn btn-accent btn-sm">
+  <i class="bi bi-plus-lg"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-pad">
+{% if shows %}
+  {% for show in shows %}
+  <a href="{{ url_for('shows.edit', show_id=show.id) }}" class="row-card">
+    {% if show.cover_image_url %}
+    <img src="{{ show.cover_image_url }}" alt="" style="width:40px;height:40px;border-radius:12px;object-fit:cover;flex-shrink:0;">
+    {% else %}
+    <div class="rc-icon"><i class="bi bi-mic"></i></div>
+    {% endif %}
+    <div class="rc-body">
+      <div class="rc-title">{{ show.title }}</div>
+      <div class="rc-sub">/feed/{{ show.feed_slug }}.xml · {{ show.episodes.count() }} episode{{ 's' if show.episodes.count() != 1 }}</div>
+    </div>
+    <div class="rc-end">
+      {% if not show.is_feed_ready %}
+      <span class="badge" style="background:#3d2506;color:#fb923c;">Incomplete</span>
+      {% endif %}
+      <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+    </div>
+  </a>
+  {% endfor %}
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-mic"></i>
+  <p>No shows yet. A show owns the RSS feed your episodes get published into.</p>
+  <a href="{{ url_for('shows.create') }}" class="btn btn-accent">Create your first show</a>
+</div>
+{% endif %}
+</div>
+{% endblock %}

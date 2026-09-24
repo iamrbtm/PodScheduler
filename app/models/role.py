@@ -40,5 +40,6 @@ PERMISSIONS = {
     "manage_participants": "Add, edit, and remove participants",
     "send_invitations": "Send participant invitations",
     "manage_email_templates": "Create and edit email templates",
+    "manage_shows": "Create and edit shows, and distribute episodes to directories",
     "view_all": "View all episodes and participants",
 }

@@ -1,5 +1,6 @@
 from .role import Role
 from .user import User
+from .show import Show
 from .podcast import Podcast, PodcastStatus
 from .participant import Participant
 from .podcast_participant import PodcastParticipant, InvitationStatus, ParticipantRole
@@ -8,6 +9,7 @@ from .mail_settings import MailSettings
 
 __all__ = [
     "Role", "User",
+    "Show",
     "Podcast", "PodcastStatus",
     "Participant",
     "PodcastParticipant", "InvitationStatus", "ParticipantRole",
