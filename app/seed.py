@@ -22,7 +22,7 @@ def _seed_roles():
             "permissions": ",".join(sorted([
                 "create_podcast", "edit_podcast", "delete_podcast",
                 "manage_participants", "send_invitations",
-                "manage_email_templates", "manage_shows", "view_all",
+                "manage_email_templates", "manage_shows", "distribute_podcast", "view_all",
             ])),
         },
         {

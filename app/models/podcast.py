@@ -7,6 +7,7 @@ class PodcastStatus(str, enum.Enum):
     DRAFT = "draft"
     SCHEDULED = "scheduled"
     RECORDED = "recorded"
+    READY_TO_DISTRIBUTE = "ready_to_distribute"
     PUBLISHED = "published"
     CANCELLED = "cancelled"
 

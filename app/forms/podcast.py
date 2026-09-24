@@ -23,6 +23,7 @@ class PodcastForm(FlaskForm):
             ("draft", "Draft"),
             ("scheduled", "Scheduled"),
             ("recorded", "Recorded"),
+            ("ready_to_distribute", "Ready to Distribute"),
             ("published", "Published"),
             ("cancelled", "Cancelled"),
         ],

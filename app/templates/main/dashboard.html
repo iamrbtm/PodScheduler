@@ -51,7 +51,7 @@
         </div>
       </div>
       <div class="rc-end">
-        <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span>
+        <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value.replace('_', ' ') }}</span>
         <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
       </div>
     </a>
@@ -76,7 +76,7 @@
         <div class="rc-sub">by {{ p.creator.username }} · {{ p.created_at.strftime('%b %d, %Y') }}</div>
       </div>
       <div class="rc-end">
-        <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span>
+        <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value.replace('_', ' ') }}</span>
         <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
       </div>
     </a>

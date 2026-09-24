@@ -181,6 +181,31 @@ def add_participants(podcast_id):
     return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
 
 
+@podcasts_bp.route("/<int:podcast_id>/distribute", methods=["POST"])
+@login_required
+@permission_required("distribute_podcast")
+def distribute(podcast_id):
+    from datetime import datetime, timezone
+
+    podcast = Podcast.query.get_or_404(podcast_id)
+
+    if podcast.status != PodcastStatus.READY_TO_DISTRIBUTE:
+        flash("Episode must be marked 'Ready to Distribute' first.", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+    if not podcast.has_audio:
+        flash("Upload episode audio before distributing.", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+    if not podcast.show or not podcast.show.is_feed_ready:
+        flash("Assign this episode to a fully configured show first (title, author, owner email, cover art).", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+    podcast.status = PodcastStatus.PUBLISHED
+    podcast.published_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash("Published! The episode is now live in your RSS feed — every directory subscribed to it will pick it up automatically.", "success")
+    return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+
 @podcasts_bp.route("/<int:podcast_id>/upload-audio", methods=["POST"])
 @login_required
 def upload_audio_file(podcast_id):
