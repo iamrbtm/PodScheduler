@@ -53,6 +53,11 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-podscheduler}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme123456}
       MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKET:-podscheduler-media}:public
+    ports:
+      # Published so an existing reverse proxy (nginx-proxy-manager, Traefik,
+      # etc. — see the `caddy` service below) can reach the S3 API directly
+      # for /media/* without joining this stack's internal Docker network.
+      - "9000:9000"
     volumes:
       - minio_data:/bitnami/minio/data
     restart: unless-stopped
@@ -60,9 +65,19 @@ services:
   # Reverse proxy + automatic HTTPS for the public domain. Routes
   # /media/* to MinIO (audio files) and everything else to the Flask app
   # (including /feed/<slug>.xml). Requires PUBLIC_DOMAIN in .env and DNS
-  # already pointed at this host — see README/CLAUDE.md distribution notes.
+  # already pointed at this host.
+  #
+  # OPTIONAL — behind a `profile`, so a plain `docker compose up` skips it.
+  # Only start this (`docker compose --profile caddy up -d`) if this host has
+  # no reverse proxy of its own. If you already run one (nginx-proxy-manager,
+  # Traefik, Caddy, etc. — ports 80/443 already bound), don't start this
+  # service at all: it'll just fight the existing one for those ports.
+  # Instead, point your existing proxy at `web:5000` (or the host's published
+  # 5000) for everything, and at `minio:9000` (or the host's published 9000)
+  # for the `/media` path specifically. See CLAUDE.md's distribution section.
   caddy:
     image: caddy:2-alpine
+    profiles: ["caddy"]
     ports:
       - "80:80"
       - "443:443"

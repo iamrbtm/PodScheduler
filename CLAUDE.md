@@ -279,8 +279,22 @@ submission. The "publish everywhere" feature is built around that reality, not a
    Amazon) offer a public submission API; this checklist is the correct, honest surface for that
    step.
 6. **Deploying this for real requires a public domain.** `PUBLIC_DOMAIN`/`PUBLIC_BASE_URL` in
-   `.env` and Caddy in `docker-compose.yml` exist so the feed and audio files are reachable from
-   the open internet — directories cannot crawl `localhost`.
+   `.env` must be set to a real domain with DNS pointed at the server — directories cannot crawl
+   `localhost`. How that domain reaches the containers depends on what's already running on the
+   host:
+   - **No existing reverse proxy?** Start the bundled `caddy` service too:
+     `docker compose --profile caddy up -d`. It's behind a Compose profile and skipped by a plain
+     `docker compose up`, since it binds host ports 80/443 and will fail to start (`port is
+     already allocated`) if anything else on the host — nginx-proxy-manager, Traefik, another
+     Caddy — already owns them. It handles HTTPS itself and routes `/media/*` to MinIO,
+     everything else to `web`.
+   - **Already running a reverse proxy (the common case for a homelab/NAS host)?** Don't start the
+     `caddy` service at all — point your existing proxy at this app instead: forward the public
+     domain to `web`'s port `5000` for everything, plus a path rule for `/media` (or `/media/*`)
+     to `minio`'s port `9000` (published to the host for exactly this). In nginx-proxy-manager
+     that's a Proxy Host targeting the host's IP and port 5000, with a Custom Location for `/media`
+     targeting port 9000. Let the existing proxy handle HTTPS; it doesn't matter that `web` and
+     `minio` themselves speak plain HTTP internally.
 
 ---
 
