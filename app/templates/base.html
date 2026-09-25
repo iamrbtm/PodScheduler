@@ -272,6 +272,35 @@
     .offcanvas-header { border-bottom: 1px solid var(--ps-border); padding: 14px 16px; }
     .offcanvas-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
 
+    /* ── Full-screen modal (bulk pickers — maximize visible rows) ── */
+    .modal-fullscreen .modal-content {
+      background: var(--ps-surface);
+      border: none;
+      border-radius: 0;
+      height: 100%;
+    }
+    .modal-fullscreen .modal-header {
+      background: var(--ps-surface2);
+      border-bottom: 1px solid var(--ps-border);
+      padding: 14px 16px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      flex-shrink: 0;
+    }
+    .modal-fullscreen .modal-title { font-size: 1rem; font-weight: 700; color: var(--ps-text); }
+    .modal-fullscreen .modal-body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px;
+    }
+    .modal-fullscreen .modal-footer {
+      background: var(--ps-surface2);
+      border-top: 1px solid var(--ps-border);
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      flex-shrink: 0;
+    }
+
     /* ── Table-less row cards ─────────────── */
     .row-card {
       background: var(--ps-surface);
