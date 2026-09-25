@@ -17,8 +17,12 @@ A **mobile-first podcast scheduling platform** built for a small team. Producers
 | Email | Flask-Mail (HTML + plain text) |
 | Migrations | Flask-Migrate (Alembic) |
 | DB | PostgreSQL 16 |
+| Object storage | MinIO (S3-compatible, self-hosted) via `boto3` — episode audio + show cover art |
+| Reverse proxy | Caddy — automatic HTTPS on `PUBLIC_DOMAIN`, routes `/media/*` to MinIO |
+| Audio metadata | `mutagen` — reads episode duration on upload |
+| Image validation | `Pillow` — validates cover art dimensions/format on upload |
 | Package manager | **uv** — `pyproject.toml` + `uv.lock`, `[tool.uv] package = false` |
-| Container | Docker Compose (`web` + `db`) |
+| Container | Docker Compose (`web` + `db` + `minio` + `minio-init` + `caddy`) |
 | WSGI | gunicorn, 2 workers |
 
 ---
@@ -59,6 +63,19 @@ MAIL_USE_TLS=true
 MAIL_USERNAME=...
 MAIL_PASSWORD=...
 MAIL_DEFAULT_SENDER=noreply@podscheduler.local
+
+# Object storage (MinIO) for episode audio + show cover art
+MINIO_ROOT_USER=podscheduler
+MINIO_ROOT_PASSWORD=<strong-random-string>
+MINIO_BUCKET=podscheduler-media
+MINIO_ENDPOINT=http://minio:9000   # internal Docker address, not public
+
+# Public domain the RSS feed + media files are served from. Podcast
+# directories fetch these from the open internet, so this must be a
+# real domain with DNS pointed at the server — not localhost — before
+# distributing anything for real.
+PUBLIC_DOMAIN=localhost
+PUBLIC_BASE_URL=http://localhost
 ```
 
 ---
@@ -74,28 +91,36 @@ PodScheduler/
 │   ├── decorators.py        # @permission_required(perm)
 │   ├── email.py             # send_invitation_email(podcast_participant)
 │   ├── seed.py              # run_seed() — roles + admin user
+│   ├── storage.py           # upload_file/upload_audio/upload_cover_image/delete_object (MinIO via boto3)
+│   ├── audio.py             # get_duration_seconds() via mutagen
+│   ├── directories.py       # DIRECTORIES — static list of podcast directories + submission links
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── role.py          # Role, PERMISSIONS dict
 │   │   ├── user.py          # User (Flask-Login mixin)
-│   │   ├── podcast.py       # Podcast, PodcastStatus enum
+│   │   ├── show.py          # Show — owns the RSS feed (one show, many episodes)
+│   │   ├── podcast.py       # Podcast (= one episode), PodcastStatus enum
 │   │   ├── participant.py   # Participant (the person, not tied to an episode)
 │   │   ├── podcast_participant.py  # PodcastParticipant join table + enums
+│   │   ├── directory_submission.py # DirectorySubmission, SubmissionStatus enum
 │   │   └── email_template.py       # EmailTemplate, MERGE_FIELDS, render_blocks_*
 │   ├── forms/
 │   │   ├── __init__.py
 │   │   ├── auth.py
 │   │   ├── podcast.py
 │   │   ├── participant.py
+│   │   ├── show.py          # ShowForm — validates cover art dimensions via Pillow
 │   │   └── role.py
 │   ├── routes/
 │   │   ├── main.py          # / and /dashboard
 │   │   ├── auth.py          # /auth/*
 │   │   ├── admin.py         # /admin/*
-│   │   ├── podcasts.py      # /podcasts/*
+│   │   ├── podcasts.py      # /podcasts/* (incl. upload-audio, distribute)
 │   │   ├── participants.py  # /participants/*
 │   │   ├── invitations.py   # /invitations/<token>/accept|decline (no login)
-│   │   └── email_templates.py  # /admin/email-templates/*
+│   │   ├── email_templates.py  # /admin/email-templates/*
+│   │   ├── shows.py         # /admin/shows/* (CRUD + directory checklist)
+│   │   └── feed.py          # /feed/<slug>.xml — public RSS feed, no login
 │   └── templates/
 │       ├── base.html        # App shell: fixed header + bottom nav
 │       ├── main/
@@ -104,11 +129,13 @@ PodScheduler/
 │       ├── participants/
 │       ├── admin/
 │       │   ├── email_templates/  # builder.html, index.html, preview.html
+│       │   ├── shows/            # index.html, form.html, directories.html
 │       │   └── ...
 │       └── invitations/     # Standalone pages (no app shell, no login)
 ├── migrations/              # Alembic migration files
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml       # web, db, minio, minio-init, caddy
+├── Caddyfile                # reverse proxy: /media/* → minio, everything else → web
 ├── entrypoint.sh            # Must be chmod +x in git (git update-index --chmod=+x)
 ├── pyproject.toml
 └── uv.lock
@@ -127,10 +154,16 @@ PodScheduler/
 - `is_admin()` → True if `role.name == "admin"`
 - `has_permission(perm)` → delegates to `role.has_permission(perm)`
 
-### Podcast
-- `id`, `title`, `topic`, `description`, `notes`, `status` (PodcastStatus enum), `scheduled_date`, `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `created_at`
-- `PodcastStatus`: `draft`, `scheduled`, `recorded`, `published`, `cancelled`
-- Properties: `keynote_slots`, `roundtable_slots`, `participant_count`
+### Show
+- `id`, `title`, `feed_slug` (unique — used in the public feed URL), `description`, `author_name`, `owner_email`, `itunes_category`, `explicit`, `language`, `website_url`, `cover_image_object_key`, `cover_image_url`, `created_by_id` (FK User), `created_at`
+- One `Show` owns one RSS feed and can have many `Podcast` (episode) rows
+- Property: `is_feed_ready` → True once title/author_name/owner_email/cover_image_url are all set — required before an episode on this show can be distributed
+
+### Podcast  *(= one episode)*
+- `id`, `title`, `topic`, `description`, `notes`, `status` (PodcastStatus enum), `scheduled_date`, `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
+- Audio fields: `audio_object_key`, `audio_url`, `audio_duration_seconds`, `audio_file_size`, `episode_number`, `season_number`, `published_at`
+- `PodcastStatus`: `draft`, `scheduled`, `recorded`, `ready_to_distribute`, `published`, `cancelled`
+- Properties: `keynote_slots`, `roundtable_slots`, `participant_count`, `has_audio`, `audio_duration_display`
 
 ### Participant
 - `id`, `name`, `email`, `phone`, `company`, `bio`, `created_at`, `created_by_id` (FK User)
@@ -152,6 +185,12 @@ PodScheduler/
 - `set_blocks(blocks)` — saves JSON and re-renders html_body + text_body
 - `render(context) → (subject, html, text)` — replaces `{{field}}` merge fields
 
+### DirectorySubmission
+- `id`, `show_id` (FK Show), `directory_key` (matches a key in `app/directories.py::DIRECTORIES`), `status` (SubmissionStatus enum), `submitted_at`, `updated_by_id` (FK User)
+- `SubmissionStatus`: `not_submitted`, `submitted`, `live`
+- Unique constraint `(show_id, directory_key)` — one row per directory per show, created on first status update
+- Method: `mark(status)` — sets status and `submitted_at` (or clears it back to `None` for `not_submitted`)
+
 ---
 
 ## Permissions
@@ -168,11 +207,13 @@ Defined in `app/models/role.py::PERMISSIONS`:
 | `manage_participants` | Add, edit, remove participants |
 | `send_invitations` | Send participant invitations |
 | `manage_email_templates` | Create and edit email templates |
+| `manage_shows` | Create and edit shows (RSS feed metadata, cover art) |
+| `distribute_podcast` | Publish an episode marked "Ready to Distribute" into its show's RSS feed |
 | `view_all` | View all episodes and participants |
 
 **Default roles seeded by `flask seed`:**
 - `admin` — all permissions
-- `producer` — create/edit/delete podcast, manage_participants, send_invitations, manage_email_templates, view_all
+- `producer` — create/edit/delete podcast, manage_participants, send_invitations, manage_email_templates, manage_shows, distribute_podcast, view_all
 - `host` — create_podcast, send_invitations
 - `viewer` — view_all
 
@@ -210,6 +251,36 @@ Use `@permission_required("perm_name")` decorator on routes. Check in templates 
 - Saving: `POST /admin/email-templates/save` with JSON body `{id, name, subject, blocks[]}`
 - `EmailTemplate.set_blocks()` renders HTML and plain text at save time, not at send time
 - Merge fields are resolved at send time via `EmailTemplate.render(context)`
+
+---
+
+## Episode distribution (RSS feed → podcast directories)
+
+**There is no API that pushes an episode to Apple/Spotify/Amazon/etc.** Podcast directories don't
+offer one — they poll a show's public RSS feed on their own schedule after a one-time feed
+submission. The "publish everywhere" feature is built around that reality, not around it:
+
+1. A `Show` owns one RSS feed (`GET /feed/<show.feed_slug>.xml`, public, no login). It needs
+   `title`, `author_name`, `owner_email`, and `cover_image_url` set before anything can be
+   distributed (`Show.is_feed_ready`).
+2. An episode (`Podcast`) is assigned to a `Show` via `show_id`, and gets audio uploaded via
+   `podcasts.upload_audio_file` → `storage.upload_audio()` (MinIO) + `audio.get_duration_seconds()`
+   (mutagen).
+3. When status is set to `ready_to_distribute`, a **"Publish to All Directories"** button appears
+   on the episode detail page. Confirming it (`podcasts.distribute`) checks audio + show
+   completeness, then sets `status = published` and `published_at = now()`.
+4. `published` episodes with audio appear in `feed.rss` automatically — this is the actual
+   distribution mechanism. No further action is needed per episode.
+5. Getting a show listed on each directory in the first place is a **one-time, per-show** setup
+   step, not a per-episode one: `/admin/shows/<id>/directories` (`app/directories.py::DIRECTORIES`)
+   lists every directory from the Buzzsprout roundup with its submission link (or a note that it
+   auto-indexes from Apple's directory / your RSS feed with no action needed) and a status you tick
+   off once. Do not add per-directory API integrations here — none of the majors (Apple, Spotify,
+   Amazon) offer a public submission API; this checklist is the correct, honest surface for that
+   step.
+6. **Deploying this for real requires a public domain.** `PUBLIC_DOMAIN`/`PUBLIC_BASE_URL` in
+   `.env` and Caddy in `docker-compose.yml` exist so the feed and audio files are reachable from
+   the open internet — directories cannot crawl `localhost`.
 
 ---
 
@@ -343,6 +414,9 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 - Jinja2 blocks are parsed statically, not conditionally. You cannot define `{% block content %}` inside both branches of an `{% if %}`. Use `{{ self.content() }}` in the else branch if you need the same block in both.
 - The `MAIL_SUPPRESS_SEND = True` in `DevelopmentConfig` silently swallows emails. To test real email sending, use `ProductionConfig` or temporarily override in `.env` with `FLASK_ENV=production`.
 - `PodcastParticipant` has a unique constraint `(podcast_id, participant_id)`. You cannot invite the same person to the same episode twice, but you can change their role.
+- Postgres native enum columns (`PodcastStatus`, `SubmissionStatus`, etc.) need explicit handling in migrations: `op.drop_table()` does **not** drop the associated `CREATE TYPE` — you must call `sa.Enum(name='...').drop(op.get_bind(), checkfirst=True)` in `downgrade()` or the type collides on a later re-create. Adding a new value to an existing enum is a one-way `ALTER TYPE ... ADD VALUE` (see `9f1c2d3e4b5a`); Postgres cannot drop a single enum value, so those migrations' `downgrade()` is a no-op.
+- `flask db migrate` autogeneration on this database currently re-detects unrelated drift left over from an earlier rename (`ix_guests_email`/`ix_podcast_guests_invitation_token` index names, `podcast_participants.participant_role` column type) on every run. Strip that noise out of the generated file by hand — don't let it ride along in an unrelated migration.
+- MinIO/Caddy only work end-to-end when Docker actually has a Docker daemon available (a plain container with just the `docker` CLI, like some CI/sandbox environments, cannot run `docker compose up`). Validate model/route/migration logic against a real Postgres instance directly if that's the situation, and confirm the full stack once on an environment with a working daemon before treating it as deployed.
 
 ---
 
@@ -351,7 +425,11 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 - No tests (yet)
 - No API / JSON endpoints (except `email_templates.save`)
 - No WebSockets or real-time updates
-- No file uploads
+- No file uploads beyond episode audio (`storage.upload_audio`) and show cover art
+  (`storage.upload_cover_image`) — both go to MinIO. Don't add general-purpose file upload without asking.
+- No push-based directory integrations (YouTube Data API, etc.) — only the RSS feed + the manual
+  submission checklist. This was an explicit scope decision (see the distribution section above),
+  not an oversight — don't add one without asking, and check `app/directories.py` first if asked to.
 - No calendar integration
 - No multi-tenancy (single organization per deployment)
 - No desktop-specific layouts — the mobile layout IS the layout
