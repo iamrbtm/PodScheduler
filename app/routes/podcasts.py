@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant
+from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant, Show
 from ..models.podcast_participant import InvitationStatus, ParticipantRole
 from ..forms import PodcastForm
 from ..decorators import permission_required
 from ..email import send_invitation_email
+from ..storage import upload_audio, delete_object
+from ..audio import get_duration_seconds
 
 podcasts_bp = Blueprint("podcasts", __name__)
 
@@ -40,6 +42,7 @@ def index():
 def create():
     form = PodcastForm()
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
+    form.show_id.choices = [(0, "— No show —")] + [(s.id, s.title) for s in Show.query.order_by(Show.title).all()]
 
     if form.validate_on_submit():
         podcast = Podcast(
@@ -51,6 +54,7 @@ def create():
             duration_minutes=form.duration_minutes.data,
             status=PodcastStatus(form.status.data),
             host_id=form.host_id.data,
+            show_id=form.show_id.data or None,
             created_by_id=current_user.id,
         )
         db.session.add(podcast)
@@ -92,8 +96,11 @@ def edit(podcast_id):
 
     form = PodcastForm(obj=podcast)
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
+    form.show_id.choices = [(0, "— No show —")] + [(s.id, s.title) for s in Show.query.order_by(Show.title).all()]
     if podcast.status:
         form.status.data = podcast.status.value if isinstance(podcast.status, PodcastStatus) else podcast.status
+    if request.method == "GET":
+        form.show_id.data = podcast.show_id or 0
 
     if form.validate_on_submit():
         podcast.title = form.title.data
@@ -104,6 +111,7 @@ def edit(podcast_id):
         podcast.duration_minutes = form.duration_minutes.data
         podcast.status = PodcastStatus(form.status.data)
         podcast.host_id = form.host_id.data
+        podcast.show_id = form.show_id.data or None
         db.session.commit()
         flash("Episode updated.", "success")
         return redirect(url_for("podcasts.detail", podcast_id=podcast.id))
@@ -170,6 +178,65 @@ def add_participants(podcast_id):
         flash(f"Added {added} participant{'s' if added != 1 else ''}.", "success")
     else:
         flash("Those participants were already on this episode.", "info")
+    return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+
+@podcasts_bp.route("/<int:podcast_id>/distribute", methods=["POST"])
+@login_required
+@permission_required("distribute_podcast")
+def distribute(podcast_id):
+    from datetime import datetime, timezone
+
+    podcast = Podcast.query.get_or_404(podcast_id)
+
+    if podcast.status != PodcastStatus.READY_TO_DISTRIBUTE:
+        flash("Episode must be marked 'Ready to Distribute' first.", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+    if not podcast.has_audio:
+        flash("Upload episode audio before distributing.", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+    if not podcast.show or not podcast.show.is_feed_ready:
+        flash("Assign this episode to a fully configured show first (title, author, owner email, cover art).", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+    podcast.status = PodcastStatus.PUBLISHED
+    podcast.published_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash("Published! The episode is now live in your RSS feed — every directory subscribed to it will pick it up automatically.", "success")
+    return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+
+@podcasts_bp.route("/<int:podcast_id>/upload-audio", methods=["POST"])
+@login_required
+def upload_audio_file(podcast_id):
+    podcast = Podcast.query.get_or_404(podcast_id)
+    _check_edit_access(podcast)
+
+    audio_file = request.files.get("audio_file")
+    if not audio_file or not audio_file.filename:
+        flash("Please choose an audio file.", "warning")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+    allowed_ext = {"mp3", "m4a", "wav", "aac", "ogg"}
+    ext = audio_file.filename.rsplit(".", 1)[-1].lower() if "." in audio_file.filename else ""
+    if ext not in allowed_ext:
+        flash("Unsupported audio format. Use MP3, M4A, WAV, AAC, or OGG.", "danger")
+        return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
+
+    duration = get_duration_seconds(audio_file)
+    old_key = podcast.audio_object_key
+    object_key, url, file_size = upload_audio(audio_file, podcast.id)
+
+    podcast.audio_object_key = object_key
+    podcast.audio_url = url
+    podcast.audio_file_size = file_size
+    podcast.audio_duration_seconds = duration
+    db.session.commit()
+
+    if old_key and old_key != object_key:
+        delete_object(old_key)
+
+    flash("Episode audio uploaded.", "success")
     return redirect(url_for("podcasts.detail", podcast_id=podcast_id))
 
 

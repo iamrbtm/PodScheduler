@@ -16,12 +16,14 @@ class PodcastForm(FlaskForm):
         "Duration (minutes)", default=60, validators=[Optional(), NumberRange(min=1, max=600)]
     )
     host_id = SelectField("Host", coerce=int, validators=[DataRequired()])
+    show_id = SelectField("Show", coerce=int, validators=[Optional()])
     status = SelectField(
         "Status",
         choices=[
             ("draft", "Draft"),
             ("scheduled", "Scheduled"),
             ("recorded", "Recorded"),
+            ("ready_to_distribute", "Ready to Distribute"),
             ("published", "Published"),
             ("cancelled", "Cancelled"),
         ],

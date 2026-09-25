@@ -15,7 +15,7 @@
   <a href="{{ url_for('podcasts.index') }}" class="filter-pill {% if not current_status %}active{% endif %}">All</a>
   {% for s in statuses %}
   <a href="{{ url_for('podcasts.index', status=s.value) }}" class="filter-pill {% if current_status == s.value %}active{% endif %}">
-    {{ s.value.title() }}
+    {{ s.value.replace('_', ' ').title() }}
   </a>
   {% endfor %}
 </div>
@@ -34,7 +34,7 @@
       </div>
     </div>
     <div class="rc-end">
-      <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value }}</span>
+      <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value.replace('_', ' ') }}</span>
       <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
     </div>
   </a>

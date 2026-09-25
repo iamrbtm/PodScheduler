@@ -23,7 +23,7 @@
           <h2 style="font-size:1.15rem;font-weight:800;margin:0 0 4px;">{{ podcast.title }}</h2>
           {% if podcast.topic %}<p style="color:rgba(255,255,255,.55);font-size:.85rem;margin:0;">{{ podcast.topic }}</p>{% endif %}
         </div>
-        <span class="badge badge-status-{{ podcast.status.value }} mt-1">{{ podcast.status.value }}</span>
+        <span class="badge badge-status-{{ podcast.status.value }} mt-1">{{ podcast.status.value.replace('_', ' ') }}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
@@ -49,6 +49,54 @@
       <p style="font-size:.8rem;color:rgba(255,255,255,.4);white-space:pre-wrap;margin:0;">{{ podcast.notes }}</p>
       {% endif %}
     </div>
+  </div>
+
+  <!-- Distribution -->
+  {% if podcast.status.value == 'ready_to_distribute' and (current_user.is_admin() or current_user.has_permission('distribute_podcast')) %}
+  <button class="btn btn-accent btn-full mb-3" data-bs-toggle="offcanvas" data-bs-target="#distributeSheet">
+    <i class="bi bi-broadcast me-2"></i>Publish to All Directories
+  </button>
+  {% elif podcast.status.value == 'published' %}
+  <div class="card mb-3" style="border:1px solid rgba(74,222,128,.25);">
+    <div class="card-body" style="padding:12px 16px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-broadcast" style="color:#4ade80;font-size:1.1rem;"></i>
+      <div style="font-size:.85rem;">
+        <div style="font-weight:600;">Live in the RSS feed</div>
+        {% if podcast.published_at %}<div style="font-size:.75rem;color:rgba(255,255,255,.45);">Published {{ podcast.published_at.strftime('%b %d, %Y') }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Episode audio card -->
+  {% set can_edit = current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
+  <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+    <span class="section-title" style="padding:0;margin:0;">
+      <i class="bi bi-file-earmark-music me-1" style="font-size:.9rem;"></i> Episode Audio
+    </span>
+    {% if can_edit %}
+    <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.8rem;"
+            data-bs-toggle="offcanvas" data-bs-target="#audioSheet">
+      <i class="bi bi-{{ 'arrow-repeat' if podcast.has_audio else 'upload' }} me-1"></i>{{ 'Replace' if podcast.has_audio else 'Upload' }}
+    </button>
+    {% endif %}
+  </div>
+  <div class="card mb-3">
+    {% if podcast.has_audio %}
+    <div class="card-body" style="padding:14px 16px;">
+      <audio controls preload="none" style="width:100%;margin-bottom:10px;">
+        <source src="{{ podcast.audio_url }}">
+      </audio>
+      <div style="display:flex;gap:16px;font-size:.78rem;color:rgba(255,255,255,.45);">
+        {% if podcast.audio_duration_display %}<span><i class="bi bi-clock"></i> {{ podcast.audio_duration_display }}</span>{% endif %}
+        {% if podcast.audio_file_size %}<span><i class="bi bi-hdd"></i> {{ (podcast.audio_file_size / 1048576) | round(1) }} MB</span>{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-body" style="text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;padding:20px;">
+      No audio uploaded yet
+    </div>
+    {% endif %}
   </div>
 
   <!-- Crew card -->
@@ -155,6 +203,63 @@
   </form>
   {% endif %}
 </div>
+
+<!-- ─── DISTRIBUTE CONFIRM SHEET ─── -->
+{% if podcast.status.value == 'ready_to_distribute' and (current_user.is_admin() or current_user.has_permission('distribute_podcast')) %}
+<div class="offcanvas offcanvas-bottom" id="distributeSheet" tabindex="-1" aria-labelledby="distributeSheetLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="distributeSheetLabel"><i class="bi bi-broadcast me-2"></i>Publish Episode</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="list-group list-group-flush mb-3">
+      <li class="list-group-item d-flex align-items-center gap-2" style="font-size:.85rem;">
+        <i class="bi bi-{{ 'check-circle-fill' if podcast.has_audio else 'x-circle-fill' }}" style="color:{{ '#4ade80' if podcast.has_audio else '#f87171' }};"></i>
+        Episode audio uploaded
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-2" style="font-size:.85rem;">
+        <i class="bi bi-{{ 'check-circle-fill' if podcast.show else 'x-circle-fill' }}" style="color:{{ '#4ade80' if podcast.show else '#f87171' }};"></i>
+        Assigned to a show
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-2" style="font-size:.85rem;">
+        <i class="bi bi-{{ 'check-circle-fill' if podcast.show and podcast.show.is_feed_ready else 'x-circle-fill' }}" style="color:{{ '#4ade80' if podcast.show and podcast.show.is_feed_ready else '#f87171' }};"></i>
+        Show feed metadata complete
+      </li>
+    </ul>
+    <p style="font-size:.8rem;color:rgba(255,255,255,.45);margin-bottom:16px;">
+      This adds the episode to your show's public RSS feed. Every directory already subscribed to that feed
+      (Apple, Spotify, Amazon, etc.) will pick it up automatically — there's nothing further to click per service.
+    </p>
+    <form method="POST" action="{{ url_for('podcasts.distribute', podcast_id=podcast.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-accent btn-full"
+              {% if not (podcast.has_audio and podcast.show and podcast.show.is_feed_ready) %}disabled{% endif %}>
+        Confirm & Publish
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ─── AUDIO UPLOAD SHEET ─── -->
+{% if can_edit %}
+<div class="offcanvas offcanvas-bottom" id="audioSheet" tabindex="-1" aria-labelledby="audioSheetLabel">
+  <div class="offcanvas-header">
+    <h6 class="mb-0 fw-bold" id="audioSheetLabel"><i class="bi bi-file-earmark-music me-2"></i>{{ 'Replace' if podcast.has_audio else 'Upload' }} Episode Audio</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form method="POST" action="{{ url_for('podcasts.upload_audio_file', podcast_id=podcast.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <input type="file" name="audio_file" class="form-control" accept=".mp3,.m4a,.wav,.aac,.ogg" required>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">MP3, M4A, WAV, AAC, or OGG.</div>
+      </div>
+      <button type="submit" class="btn btn-accent btn-full">Upload</button>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <!-- ─── CREW SHEET ─── -->
 {% if current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}

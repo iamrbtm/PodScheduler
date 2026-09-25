@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if show else 'New' }} Show — PodScheduler{% endblock %}
+{% block page_title %}{{ 'Edit Show' if show else 'New Show' }}{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('shows.index') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="page-pad">
+  <form method="POST" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+
+    {% if show %}
+    <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+      <div class="card-body" style="padding:12px 16px;">
+        <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Public feed URL</div>
+        <div style="font-size:.85rem;font-weight:600;word-break:break-all;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section-title" style="padding-left:0;">Show Info</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          {{ form.title.label(class="form-label") }}
+          {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="My Podcast") }}
+          {% for e in form.title.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.feed_slug.label(class="form-label") }}
+          {{ form.feed_slug(class="form-control" + (" is-invalid" if form.feed_slug.errors else ""), placeholder="my-podcast", autocomplete="off") }}
+          {% for e in form.feed_slug.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Used in your public feed URL — cannot be easily changed once submitted to directories.</div>
+        </div>
+        <div>
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control", rows=3, placeholder="What your show is about...") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="padding-left:0;">Publisher Info</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          {{ form.author_name.label(class="form-label") }}
+          {{ form.author_name(class="form-control" + (" is-invalid" if form.author_name.errors else ""), placeholder="Your name or company") }}
+          {% for e in form.author_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
+          {{ form.owner_email.label(class="form-label") }}
+          {{ form.owner_email(class="form-control" + (" is-invalid" if form.owner_email.errors else ""), inputmode="email", placeholder="you@yourpodcast.com") }}
+          {% for e in form.owner_email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Directories use this to contact you about the show.</div>
+        </div>
+        <div>
+          {{ form.website_url.label(class="form-label") }}
+          {{ form.website_url(class="form-control", placeholder="https://yourpodcast.com") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="padding-left:0;">Directory Metadata</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          {{ form.itunes_category.label(class="form-label") }}
+          {{ form.itunes_category(class="form-select") }}
+        </div>
+        <div>
+          {{ form.language.label(class="form-label") }}
+          {{ form.language(class="form-control", placeholder="en-us") }}
+        </div>
+        <div class="d-flex align-items-center justify-content-between" style="padding:4px 0;">
+          <div style="font-size:.88rem;font-weight:500;">Contains Explicit Content</div>
+          <div class="form-check form-switch mb-0">
+            {{ form.explicit(class="form-check-input", style="width:2.5em;height:1.3em;") }}
+          </div>
+        </div>
+        <div>
+          {{ form.cover_image.label(class="form-label") }}
+          {% if show and show.cover_image_url %}
+          <img src="{{ show.cover_image_url }}" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;margin-bottom:8px;display:block;">
+          {% endif %}
+          {{ form.cover_image(class="form-control" + (" is-invalid" if form.cover_image.errors else "")) }}
+          {% for e in form.cover_image.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Apple requires at least 1400×1400px, JPG or PNG.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex flex-column gap-2 mb-4">
+      {{ form.submit(class="btn btn-accent btn-full") }}
+      <a href="{{ url_for('shows.index') }}" class="btn btn-outline-secondary btn-full">Cancel</a>
+    </div>
+  </form>
+
+  {% if show %}
+  <form method="POST" action="{{ url_for('shows.delete', show_id=show.id) }}" class="mb-4"
+        onsubmit="return confirm('Delete this show? This cannot be undone.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-danger btn-full">
+      <i class="bi bi-trash me-2"></i>Delete Show
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
