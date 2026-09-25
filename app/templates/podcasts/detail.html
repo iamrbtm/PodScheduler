@@ -147,7 +147,7 @@
     </span>
     {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
     <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.85rem;font-weight:700;"
-            data-bs-toggle="offcanvas" data-bs-target="#keynoteSheet"
+            data-bs-toggle="modal" data-bs-target="#keynoteSheet"
             {% if not available_participants %}disabled{% endif %}>
       <i class="bi bi-plus-lg"></i>
     </button>
@@ -173,7 +173,7 @@
     </span>
     {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
     <button class="btn btn-sm" style="color:var(--ps-accent);padding:2px 8px;font-size:.85rem;font-weight:700;"
-            data-bs-toggle="offcanvas" data-bs-target="#roundtableSheet"
+            data-bs-toggle="modal" data-bs-target="#roundtableSheet"
             {% if not available_participants %}disabled{% endif %}>
       <i class="bi bi-plus-lg"></i>
     </button>
@@ -294,106 +294,116 @@
 </div>
 {% endif %}
 
-<!-- ─── KEYNOTE PICKER SHEET ─── -->
+<!-- ─── KEYNOTE PICKER (full-screen modal) ─── -->
 {% if current_user.is_admin() or current_user.has_permission('manage_participants') %}
-<div class="offcanvas offcanvas-bottom" id="keynoteSheet" tabindex="-1" aria-labelledby="keynoteSheetLabel" style="max-height:85vh;">
-  <div class="offcanvas-header pb-2">
-    <h6 class="mb-0 fw-bold" id="keynoteSheetLabel"><i class="bi bi-star-fill me-2" style="color:#facc15;"></i>Add Keynote Speaker</h6>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-  </div>
-  <div class="offcanvas-body d-flex flex-column" style="padding-top:0;overflow:hidden;">
-    <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="keynoteForm">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="role" value="keynote_speaker">
-
-      <!-- Search -->
-      <div class="mb-2 pt-2">
-        <input type="text" class="form-control picker-search" data-target="keynotePicker"
-               placeholder="Search by name or email…" autocomplete="off"
-               style="font-size:.9rem;">
+<div class="modal" id="keynoteSheet" tabindex="-1" aria-labelledby="keynoteSheetLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="keynoteSheetLabel"><i class="bi bi-star-fill me-2" style="color:#facc15;"></i>Add Keynote Speaker</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="keynoteForm" class="d-flex flex-column h-100">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="keynote_speaker">
 
-      <!-- Guest of field -->
-      <div class="mb-2">
-        <input type="text" name="guest_of" class="form-control" placeholder="Guest of (optional — who referred them?)"
-               style="font-size:.85rem;">
-      </div>
-
-      <!-- Participant list -->
-      <div id="keynotePicker" style="flex:1;overflow-y:auto;max-height:38vh;border:1px solid var(--ps-border);border-radius:12px;margin-bottom:12px;">
-        {% if available_participants %}
-        {% for p in available_participants %}
-        <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
-          <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="keynoteSheet"
-                 style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
-          <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#7c5cfc;">
-            {{ p.name[0].upper() }}
+          <!-- Search -->
+          <div class="mb-2">
+            <input type="text" class="form-control picker-search" data-target="keynotePicker"
+                   placeholder="Search by name or email…" autocomplete="off"
+                   style="font-size:.9rem;">
           </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
-            <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
-          </div>
-        </label>
-        {% endfor %}
-        {% else %}
-        <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
-          No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
-        </div>
-        {% endif %}
-      </div>
 
-      <button type="submit" class="btn btn-accent btn-full add-btn" data-sheet="keynoteSheet" disabled>
-        Select people above
-      </button>
-    </form>
+          <!-- Guest of field -->
+          <div class="mb-2">
+            <input type="text" name="guest_of" class="form-control" placeholder="Guest of (optional — who referred them?)"
+                   style="font-size:.85rem;">
+          </div>
+
+          <!-- Participant list -->
+          <div id="keynotePicker" class="picker-list">
+            {% if available_participants %}
+            {% for p in available_participants %}
+            <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
+              <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="keynoteSheet"
+                     style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
+              <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#7c5cfc;">
+                {{ p.name[0].upper() }}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
+                <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
+              </div>
+            </label>
+            {% endfor %}
+            {% else %}
+            <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
+              No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
+            </div>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" form="keynoteForm" class="btn btn-accent btn-full add-btn" data-sheet="keynoteSheet" disabled>
+          Select people above
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ─── ROUNDTABLE PICKER SHEET ─── -->
-<div class="offcanvas offcanvas-bottom" id="roundtableSheet" tabindex="-1" aria-labelledby="roundtableSheetLabel" style="max-height:85vh;">
-  <div class="offcanvas-header pb-2">
-    <h6 class="mb-0 fw-bold" id="roundtableSheetLabel"><i class="bi bi-people-fill me-2" style="color:#38bdf8;"></i>Add Round Table</h6>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-  </div>
-  <div class="offcanvas-body d-flex flex-column" style="padding-top:0;overflow:hidden;">
-    <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="roundtableForm">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="role" value="roundtable">
-
-      <!-- Search -->
-      <div class="mb-2 pt-2">
-        <input type="text" class="form-control picker-search" data-target="roundtablePicker"
-               placeholder="Search by name or email…" autocomplete="off"
-               style="font-size:.9rem;">
+<!-- ─── ROUNDTABLE PICKER (full-screen modal) ─── -->
+<div class="modal" id="roundtableSheet" tabindex="-1" aria-labelledby="roundtableSheetLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="roundtableSheetLabel"><i class="bi bi-people-fill me-2" style="color:#38bdf8;"></i>Add Round Table</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('podcasts.add_participants', podcast_id=podcast.id) }}" id="roundtableForm" class="d-flex flex-column h-100">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="roundtable">
 
-      <!-- Participant list -->
-      <div id="roundtablePicker" style="flex:1;overflow-y:auto;max-height:44vh;border:1px solid var(--ps-border);border-radius:12px;margin-bottom:12px;">
-        {% if available_participants %}
-        {% for p in available_participants %}
-        <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
-          <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="roundtableSheet"
-                 style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
-          <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#38bdf8;">
-            {{ p.name[0].upper() }}
+          <!-- Search -->
+          <div class="mb-2">
+            <input type="text" class="form-control picker-search" data-target="roundtablePicker"
+                   placeholder="Search by name or email…" autocomplete="off"
+                   style="font-size:.9rem;">
           </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
-            <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
+
+          <!-- Participant list -->
+          <div id="roundtablePicker" class="picker-list">
+            {% if available_participants %}
+            {% for p in available_participants %}
+            <label class="picker-item d-flex align-items-center gap-3" data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
+              <input type="checkbox" name="participant_ids" value="{{ p.id }}" class="picker-check" data-sheet="roundtableSheet"
+                     style="width:20px;height:20px;flex-shrink:0;accent-color:var(--ps-accent);">
+              <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.75rem;color:#38bdf8;">
+                {{ p.name[0].upper() }}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:.88rem;">{{ p.name }}</div>
+                <div style="font-size:.75rem;color:rgba(255,255,255,.4);">{{ p.email }}{% if p.company %} · {{ p.company }}{% endif %}</div>
+              </div>
+            </label>
+            {% endfor %}
+            {% else %}
+            <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
+              No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
+            </div>
+            {% endif %}
           </div>
-        </label>
-        {% endfor %}
-        {% else %}
-        <div style="padding:24px;text-align:center;color:rgba(255,255,255,.3);font-size:.85rem;">
-          No participants available — <a href="{{ url_for('participants.create') }}">add one first</a>
-        </div>
-        {% endif %}
+        </form>
       </div>
-
-      <button type="submit" class="btn btn-accent btn-full add-btn" data-sheet="roundtableSheet" disabled>
-        Select people above
-      </button>
-    </form>
+      <div class="modal-footer">
+        <button type="submit" form="roundtableForm" class="btn btn-accent btn-full add-btn" data-sheet="roundtableSheet" disabled>
+          Select people above
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 {% endif %}
@@ -441,6 +451,13 @@
 </div>
 
 <style>
+.picker-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--ps-border);
+  border-radius: 12px;
+}
 .picker-item {
   padding: 10px 14px;
   cursor: pointer;

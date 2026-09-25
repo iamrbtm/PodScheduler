@@ -353,6 +353,35 @@ Use Bootstrap 5 offcanvas with class `offcanvas-bottom` for forms that appear ov
 ```
 CSS in base.html already sets `border-radius: 20px 20px 0 0`.
 
+### Full-screen modal pattern (multi-select pickers)
+
+For a picker where the user needs to scan/select from a long list (e.g. adding several
+participants at once), use a Bootstrap `modal` with `modal-fullscreen` instead of a bottom sheet —
+a bottom sheet's capped height leaves too little room to see many rows at once:
+```html
+<div class="modal" id="myPicker" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">...<button data-bs-dismiss="modal">...</button></div>
+      <div class="modal-body">
+        <form id="myForm" class="d-flex flex-column h-100">
+          <!-- search/filter fields here -->
+          <div class="picker-list">...</div> <!-- flex:1, scrolls; see podcasts/detail.html -->
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" form="myForm" class="btn btn-accent btn-full">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+```
+Trigger with `data-bs-toggle="modal" data-bs-target="#myPicker"`. Put the submit button in
+`modal-footer` using `form="myForm"` (HTML5 form association) so it stays pinned below the
+scrolling list rather than requiring a scroll to reach it. CSS for `.modal-fullscreen` lives in
+base.html; `.picker-list`/`.picker-item` are local to the template that uses them (see
+`podcasts/detail.html`'s keynote/round-table pickers for a full example).
+
 ---
 
 ## Migrations
