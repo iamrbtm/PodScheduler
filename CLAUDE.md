@@ -22,7 +22,7 @@ A **mobile-first podcast scheduling platform** built for a small team. Producers
 | Audio metadata | `mutagen` — reads episode duration on upload |
 | Image validation | `Pillow` — validates cover art dimensions/format on upload |
 | Package manager | **uv** — `pyproject.toml` + `uv.lock`, `[tool.uv] package = false` |
-| Container | Docker Compose (`web` + `db` + `minio` + `minio-init` + `caddy`) |
+| Container | Docker Compose (`web` + `db` + `minio` + `caddy`) |
 | WSGI | gunicorn, 2 workers |
 
 ---
@@ -134,7 +134,7 @@ PodScheduler/
 │       └── invitations/     # Standalone pages (no app shell, no login)
 ├── migrations/              # Alembic migration files
 ├── Dockerfile
-├── docker-compose.yml       # web, db, minio, minio-init, caddy
+├── docker-compose.yml       # web, db, minio, caddy
 ├── Caddyfile                # reverse proxy: /media/* → minio, everything else → web
 ├── entrypoint.sh            # Must be chmod +x in git (git update-index --chmod=+x)
 ├── pyproject.toml
@@ -446,7 +446,8 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 - Postgres native enum columns (`PodcastStatus`, `SubmissionStatus`, etc.) need explicit handling in migrations: `op.drop_table()` does **not** drop the associated `CREATE TYPE` — you must call `sa.Enum(name='...').drop(op.get_bind(), checkfirst=True)` in `downgrade()` or the type collides on a later re-create. Adding a new value to an existing enum is a one-way `ALTER TYPE ... ADD VALUE` (see `9f1c2d3e4b5a`); Postgres cannot drop a single enum value, so those migrations' `downgrade()` is a no-op.
 - `flask db migrate` autogeneration on this database currently re-detects unrelated drift left over from an earlier rename (`ix_guests_email`/`ix_podcast_guests_invitation_token` index names, `podcast_participants.participant_role` column type) on every run. Strip that noise out of the generated file by hand — don't let it ride along in an unrelated migration.
 - MinIO/Caddy only work end-to-end when Docker actually has a Docker daemon available (a plain container with just the `docker` CLI, like some CI/sandbox environments, cannot run `docker compose up`). Validate model/route/migration logic against a real Postgres instance directly if that's the situation, and confirm the full stack once on an environment with a working daemon before treating it as deployed.
-- MinIO images are pulled from `quay.io/minio/minio` and `quay.io/minio/mc`, **not** Docker Hub's `minio/minio`/`minio/mc` — MinIO locked those Docker Hub repos down in 2024, so pulling the Docker Hub names now fails with `pull access denied ... repository does not exist`. If a pinned `RELEASE.*` tag 404s on quay.io (tags aren't always mirrored 1:1), fall back to `quay.io/minio/minio:latest` / `quay.io/minio/mc:latest` rather than reaching for the Docker Hub name.
+- The `minio` service pulls `bitnamilegacy/minio:latest`, not MinIO Inc.'s own images. As of 2024/2025, **none** of `minio/minio` (Docker Hub), `quay.io/minio/minio`, `minio/mc`, or `quay.io/minio/mc` are freely pullable anymore (every tag we tried across all of them came back `pull access denied`/404/401) — MinIO Inc. locked down anonymous pulls of their official images. Bitnami's own `bitnami/minio` went the same way around the same time; the last free public copies live under the `bitnamilegacy/*` namespace instead. If `bitnamilegacy/minio` ever stops working too, re-verify with real `docker pull` attempts (not `docker manifest inspect`, which needs Docker's experimental CLI flag and otherwise fails uniformly regardless of whether an image exists) before picking a replacement — this whole area has been in flux and stays worth double-checking rather than assuming.
+- There's no separate `mc`/`minio-init` container: `bitnamilegacy/minio`'s `MINIO_DEFAULT_BUCKETS=<bucket>:public` env var creates the bucket and sets it publicly readable on first boot, which avoids depending on a second, independently-versioned image (`mc`'s own pullability turned out to be exactly as unreliable as the server's).
 
 ---
 
