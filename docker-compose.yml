@@ -36,7 +36,7 @@ services:
   # here via the `caddy` reverse proxy, so this must end up reachable at
   # your public domain — see PUBLIC_BASE_URL in .env.
   minio:
-    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    image: quay.io/minio/minio:RELEASE.2024-10-13T13-34-11Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-podscheduler}
@@ -54,7 +54,7 @@ services:
   # publicly readable (episode audio + RSS feed enclosures must be
   # fetchable by directory crawlers without auth). Exits after running.
   minio-init:
-    image: minio/mc:RELEASE.2024-10-13T09-55-04Z
+    image: quay.io/minio/mc:RELEASE.2024-10-13T09-55-04Z
     depends_on:
       minio:
         condition: service_healthy
