@@ -34,6 +34,7 @@ def create():
             explicit=form.explicit.data,
             language=form.language.data,
             website_url=form.website_url.data or None,
+            castopod_podcast_id=form.castopod_podcast_id.data or None,
             created_by_id=current_user.id,
         )
         db.session.add(show)
@@ -68,6 +69,7 @@ def edit(show_id):
         show.explicit = form.explicit.data
         show.language = form.language.data
         show.website_url = form.website_url.data or None
+        show.castopod_podcast_id = form.castopod_podcast_id.data or None
 
         if form.cover_image.data:
             delete_object(show.cover_image_object_key)

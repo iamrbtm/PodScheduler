@@ -1,8 +1,8 @@
 from PIL import Image
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Optional, Length, Email, ValidationError, Regexp
+from wtforms import StringField, TextAreaField, SelectField, BooleanField, IntegerField, SubmitField
+from wtforms.validators import DataRequired, Optional, Length, Email, ValidationError, Regexp, NumberRange
 from ..models import Show
 
 MIN_COVER_PX = 1400
@@ -33,6 +33,7 @@ class ShowForm(FlaskForm):
     explicit = BooleanField("Contains Explicit Content")
     language = StringField("Language Code", default="en-us", validators=[DataRequired(), Length(max=10)])
     website_url = StringField("Website URL", validators=[Optional(), Length(max=500)])
+    castopod_podcast_id = IntegerField("Castopod Podcast ID", validators=[Optional(), NumberRange(min=1)])
     cover_image = FileField(
         "Cover Art (min 1400×1400px, JPG or PNG)",
         validators=[Optional(), FileAllowed(["jpg", "jpeg", "png"], "Images only.")],

@@ -59,6 +59,12 @@
           <div style="font-size:.75rem;color:rgba(var(--ps-ink-rgb),.3);margin-top:6px;">Which show's RSS feed this episode belongs to.</div>
         </div>
         <div>
+          {{ form.castopod_episode_id.label(class="form-label") }}
+          {{ form.castopod_episode_id(class="form-control" + (" is-invalid" if form.castopod_episode_id.errors else ""), inputmode="numeric", placeholder="Optional") }}
+          {% for e in form.castopod_episode_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">The number in the episode's Castopod admin URL (…/episodes/<strong>12</strong>). Pulls its download stats.</div>
+        </div>
+        <div>
           {{ form.status.label(class="form-label") }}
           {{ form.status(class="form-select") }}
         </div>

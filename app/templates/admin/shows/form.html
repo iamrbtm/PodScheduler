@@ -58,6 +58,12 @@
           {{ form.website_url.label(class="form-label") }}
           {{ form.website_url(class="form-control", placeholder="https://yourpodcast.com") }}
         </div>
+        <div>
+          {{ form.castopod_podcast_id.label(class="form-label") }}
+          {{ form.castopod_podcast_id(class="form-control" + (" is-invalid" if form.castopod_podcast_id.errors else ""), inputmode="numeric", placeholder="Optional") }}
+          {% for e in form.castopod_podcast_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Links this show to Castopod for download stats. Admin → Castopod → Test Connection lists the IDs.</div>
+        </div>
       </div>
     </div>
 

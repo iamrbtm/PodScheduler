@@ -42,6 +42,12 @@ class Podcast(db.Model):
     episode_number = db.Column(db.Integer)
     season_number = db.Column(db.Integer)
     published_at = db.Column(db.DateTime)
+    # Numeric episode id on the linked Castopod instance, plus the last stats
+    # pulled from its REST API (cached so the detail page doesn't hit Castopod
+    # on every load — see app/castopod.py)
+    castopod_episode_id = db.Column(db.Integer)
+    castopod_stats_json = db.Column(db.JSON)
+    castopod_synced_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

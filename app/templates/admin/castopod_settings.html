@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Castopod — PodScheduler{% endblock %}
+{% block page_title %}Castopod{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.dashboard') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="page-pad">
+
+  <!-- Status banner -->
+  <div class="card mb-3" style="border:1px solid {% if settings and settings.is_configured %}rgba(74,222,128,.2){% else %}rgba(124,92,252,.3){% endif %};">
+    <div class="card-body" style="padding:12px 16px;">
+      <div class="d-flex align-items-center gap-2" style="font-size:.85rem;color:rgba(255,255,255,.5);">
+        {% if settings and settings.is_configured %}
+        <i class="bi bi-check-circle" style="color:#4ade80;"></i>
+        Pulling episode stats from {{ settings.base_url }}
+        {% else %}
+        <i class="bi bi-info-circle" style="color:#7c5cfc;"></i>
+        Stats sync is off. Connect your Castopod instance to show download counts on each episode.
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Test result -->
+  {% if test_error %}
+  <div class="card mb-3" style="border:1px solid rgba(248,113,113,.3);">
+    <div class="card-body" style="padding:12px 16px;font-size:.85rem;">
+      <i class="bi bi-x-circle me-1" style="color:#f87171;"></i>{{ test_error }}
+    </div>
+  </div>
+  {% elif podcasts is not none %}
+  <div class="section-title" style="padding-left:0;">Podcasts on Castopod</div>
+  {% for p in podcasts %}
+  <div class="row-card">
+    <div class="rc-icon" style="background:rgba(74,222,128,.08);">
+      <i class="bi bi-mic" style="color:#4ade80;"></i>
+    </div>
+    <div class="rc-body">
+      <div class="rc-title">{{ p.title }}</div>
+      {% if p.handle %}<div class="rc-sub">@{{ p.handle }}</div>{% endif %}
+    </div>
+    <div class="rc-end"><span class="badge bg-secondary">ID {{ p.id }}</span></div>
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:20px;">Connected, but Castopod has no podcasts yet.</div>
+  {% endfor %}
+  <div style="font-size:.75rem;color:rgba(255,255,255,.35);margin:6px 0 18px;">
+    Put the ID in each show's "Castopod Podcast ID" field (Admin → Shows → edit).
+  </div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('admin.castopod_settings') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="section-title" style="padding-left:0;">Connection</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="form-label" style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:6px;">Castopod URL</label>
+          <input type="url" name="base_url" class="form-control" inputmode="url"
+                 value="{{ settings.base_url if settings and settings.base_url else '' }}"
+                 placeholder="https://podcasts.yourdomain.com" autocomplete="off"
+                 style="font-size:16px;">
+        </div>
+        <div class="d-flex align-items-center justify-content-between" style="padding:4px 0;">
+          <div>
+            <div style="font-size:.88rem;font-weight:500;">Sync stats</div>
+            <div style="font-size:.76rem;color:rgba(255,255,255,.4);">Show Castopod downloads on episode pages</div>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" name="sync_enabled" id="swSync"
+                   {% if settings and settings.sync_enabled %}checked{% endif %}
+                   style="width:2.5em;height:1.3em;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="padding-left:0;">REST API Credentials</div>
+    <div class="card mb-3">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="form-label" style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:6px;">Username</label>
+          <input type="text" name="api_username" class="form-control"
+                 value="{{ settings.api_username if settings and settings.api_username else '' }}"
+                 autocomplete="off" autocapitalize="off" style="font-size:16px;">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:6px;">
+            Password
+            {% if settings and settings.api_password %}
+            <span style="color:rgba(124,92,252,.7);font-size:.78rem;"> — set, leave blank to keep</span>
+            {% endif %}
+          </label>
+          <input type="password" name="api_password" class="form-control"
+                 placeholder="{% if settings and settings.api_password %}••••••••{% else %}API password{% endif %}"
+                 autocomplete="new-password" style="font-size:16px;">
+        </div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.35);">
+          Castopod's REST API is off by default. In Castopod's <code>.env</code> set
+          <code>restapi.enabled=true</code>, <code>restapi.basicAuth=true</code>,
+          <code>restapi.basicAuthUsername</code> and <code>restapi.basicAuthPassword</code>,
+          then use the same username and password here.
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-accent btn-full mb-3">
+      <i class="bi bi-floppy me-2"></i>Save Settings
+    </button>
+  </form>
+
+  {% if settings and settings.base_url %}
+  <form method="POST" action="{{ url_for('admin.test_castopod') }}" class="mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-full"
+            style="background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.2);">
+      <i class="bi bi-plug me-2"></i>Test Connection &amp; List Podcasts
+    </button>
+  </form>
+  {% endif %}
+
+</div>
+{% endblock %}

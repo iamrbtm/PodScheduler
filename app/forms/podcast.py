@@ -23,6 +23,9 @@ class PodcastForm(FlaskForm):
     )
     host_id = SelectField("Host", coerce=int, validators=[DataRequired()])
     show_id = SelectField("Show", coerce=int, validators=[Optional()])
+    castopod_episode_id = IntegerField(
+        "Castopod Episode ID", validators=[Optional(), NumberRange(min=1)]
+    )
     status = SelectField(
         "Status",
         choices=[

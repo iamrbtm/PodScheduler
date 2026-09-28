@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from ..extensions import db
 from ..models import Podcast, PodcastStatus, User, Participant, PodcastParticipant, Show
@@ -8,6 +8,8 @@ from ..decorators import permission_required
 from ..email import send_invitation_email
 from ..storage import upload_audio, delete_object
 from ..audio import get_duration_seconds
+from ..castopod import get_stats as get_castopod_stats
+from ..models.castopod_settings import CastopodSettings
 
 podcasts_bp = Blueprint("podcasts", __name__)
 
@@ -57,6 +59,7 @@ def create():
             status=PodcastStatus(form.status.data),
             host_id=form.host_id.data,
             show_id=form.show_id.data or None,
+            castopod_episode_id=form.castopod_episode_id.data or None,
             created_by_id=current_user.id,
         )
         db.session.add(podcast)
@@ -79,15 +82,25 @@ def detail(podcast_id):
     ).order_by(Participant.name).all()
 
     users = User.query.filter_by(is_active=True).order_by(User.username).all()
+    castopod_settings = CastopodSettings.get()
 
     return render_template(
         "podcasts/detail.html",
         podcast=podcast,
         available_participants=available_participants,
         users=users,
+        castopod_enabled=bool(castopod_settings and castopod_settings.is_configured),
         InvitationStatus=InvitationStatus,
         ParticipantRole=ParticipantRole,
     )
+
+
+@podcasts_bp.route("/<int:podcast_id>/castopod-stats.json")
+@login_required
+def castopod_stats(podcast_id):
+    podcast = Podcast.query.get_or_404(podcast_id)
+    _check_access(podcast)
+    return jsonify(get_castopod_stats(podcast, force=request.args.get("refresh") == "1"))
 
 
 @podcasts_bp.route("/<int:podcast_id>/edit", methods=["GET", "POST"])
@@ -116,6 +129,7 @@ def edit(podcast_id):
         podcast.status = PodcastStatus(form.status.data)
         podcast.host_id = form.host_id.data
         podcast.show_id = form.show_id.data or None
+        podcast.castopod_episode_id = form.castopod_episode_id.data or None
         db.session.commit()
         flash("Episode updated.", "success")
         return redirect(url_for("podcasts.detail", podcast_id=podcast.id))

@@ -96,6 +96,7 @@ PodScheduler/
 │   ├── storage.py           # upload_file/upload_audio/upload_cover_image/delete_object (MinIO via boto3)
 │   ├── audio.py             # get_duration_seconds() via mutagen
 │   ├── directories.py       # DIRECTORIES — static list of podcast directories + submission links
+│   ├── castopod.py          # read-only Castopod REST API client + cached episode stats
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── role.py          # Role, PERMISSIONS dict
@@ -108,6 +109,7 @@ PodScheduler/
 │   │   ├── mail_settings.py        # MailSettings — singleton SMTP config
 │   │   ├── guest_question.py       # GuestQuestion — questions guests send to the host
 │   │   ├── calendar_settings.py    # CalendarSettings — singleton, holds the ICS feed_token
+│   │   ├── castopod_settings.py    # CastopodSettings — singleton Castopod URL + REST API basic-auth creds
 │   │   └── email_template.py       # EmailTemplate, MERGE_FIELDS, render_blocks_*
 │   ├── forms/
 │   │   ├── __init__.py
@@ -140,6 +142,7 @@ PodScheduler/
 │       │   ├── email_templates/  # builder.html, index.html, preview.html
 │       │   ├── shows/            # index.html, form.html, directories.html
 │       │   ├── calendar_settings.html  # view/regenerate the ICS subscription link
+│       │   ├── castopod_settings.html  # Castopod connection + test/list podcast IDs
 │       │   └── ...
 │       └── invitations/     # Standalone pages (no app shell, no login)
 ├── migrations/              # Alembic migration files
@@ -166,13 +169,14 @@ PodScheduler/
 - `has_permission(perm)` → delegates to `role.has_permission(perm)`
 
 ### Show
-- `id`, `title`, `feed_slug` (unique — used in the public feed URL), `description`, `author_name`, `owner_email`, `itunes_category`, `explicit`, `language`, `website_url`, `cover_image_object_key`, `cover_image_url`, `created_by_id` (FK User), `created_at`
+- `id`, `title`, `feed_slug` (unique — used in the public feed URL), `description`, `author_name`, `owner_email`, `itunes_category`, `explicit`, `language`, `website_url`, `cover_image_object_key`, `cover_image_url`, `castopod_podcast_id` (nullable), `created_by_id` (FK User), `created_at`
 - One `Show` owns one RSS feed and can have many `Podcast` (episode) rows
 - Property: `is_feed_ready` → True once title/author_name/owner_email/cover_image_url are all set — required before an episode on this show can be distributed
 
 ### Podcast  *(= one episode)*
 - `id`, `title`, `topic`, `description`, `notes` (internal), `guest_prep_info` (guest-visible prep text), `status` (PodcastStatus enum), `recording_date` (when it's taped), `scheduled_date` (release / go-live — label is "Release Date & Time"), `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
 - Audio fields: `audio_object_key`, `audio_url`, `audio_duration_seconds`, `audio_file_size`, `episode_number`, `season_number`, `published_at`
+- Castopod fields: `castopod_episode_id` (nullable), `castopod_stats_json` (cached stats), `castopod_synced_at`
 - `PodcastStatus`: `draft`, `scheduled`, `recorded`, `ready_to_distribute`, `published`, `cancelled`
 - Properties: `keynote_slots`, `roundtable_slots`, `participant_count`, `has_audio`, `audio_duration_display`
 
@@ -365,6 +369,30 @@ not something fixable from this side.
 
 ---
 
+## Castopod stats
+
+Episodes themselves are hosted/published on a separate self-hosted **Castopod** instance; PodScheduler
+only *reads* download counts back from it (`app/castopod.py`, stdlib `urllib`, no extra dependency).
+
+- Connection lives in the `CastopodSettings` singleton (`/admin/settings/castopod`, admin-only): base
+  URL, REST API basic-auth username/password, and a sync toggle. Castopod's REST API is **off by
+  default** — its own `.env` needs `restapi.enabled=true`, `restapi.basicAuth=true`,
+  `restapi.basicAuthUsername`, `restapi.basicAuthPassword`. "Test Connection" lists the instance's
+  podcasts with their numeric IDs.
+- Linking is two numeric IDs: `Show.castopod_podcast_id` (show form) and `Podcast.castopod_episode_id`
+  (episode form — the number in the episode's Castopod admin URL). Both are required for stats.
+- **Castopod's REST API has no analytics endpoints.** The only listener metric it exposes is each
+  episode's `downloads_count` (plus `comments_count`). Unique listeners, countries, apps etc. exist
+  only in Castopod's session-authenticated admin UI — don't try to scrape them.
+- Stats are fetched from `GET api/rest/v1/episodes?podcastIds=<show id>&limit=1000`, **not**
+  `episodes/<id>`: Castopod caches the single-episode lookup indefinitely, so its `downloads_count`
+  goes stale. The list call also gives the show-wide download total.
+- Results are cached on the `Podcast` row for 1 hour; the refresh button forces a refetch but is
+  throttled to once a minute. If Castopod is unreachable the last cached numbers are still shown
+  alongside the error.
+
+---
+
 ## Mobile-first UI
 
 **This is a phone app. Every decision must start from a 375px viewport.**
@@ -537,8 +565,10 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 ## What this project does NOT have (don't add without asking)
 
 - No test suite (only `scripts/verify_portal.py`, run with `docker compose exec -T web uv run python scripts/verify_portal.py`)
-- No API / JSON endpoints, except `email_templates.save` and `calendar.events_json`
-  (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget).
+- No API / JSON endpoints, except `email_templates.save`, `calendar.events_json`
+  (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget), and
+  `podcasts.castopod_stats` (`GET /podcasts/<id>/castopod-stats.json`, login-required, feeds the
+  episode page's Castopod stat tiles).
   The guest portal adds public HTML form POSTs under `/p/<token>/…` (respond, question, email-pdf) — not JSON.
 - No polls, question threads or producer question inbox in the portal (deliberate v1 scope — see `docs/superpowers/specs/2026-09-29-participant-portal-design.md`)
 - No WebSockets or real-time updates

@@ -6,6 +6,8 @@ from ..models import User, Role
 from ..models.role import PERMISSIONS
 from ..models.mail_settings import MailSettings
 from ..models.calendar_settings import CalendarSettings
+from ..models.castopod_settings import CastopodSettings
+from ..castopod import list_podcasts as list_castopod_podcasts, CastopodError
 from ..forms import EditUserForm, RoleForm
 from ..decorators import admin_required
 
@@ -255,4 +257,53 @@ def calendar_settings():
         settings=settings,
         https_url=https_url,
         webcal_url=webcal_url,
+    )
+
+
+# ── Castopod Settings ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/settings/castopod", methods=["GET", "POST"])
+@login_required
+@admin_required
+def castopod_settings():
+    settings = CastopodSettings.get()
+
+    if request.method == "POST":
+        if settings is None:
+            settings = CastopodSettings()
+            db.session.add(settings)
+
+        settings.base_url = request.form.get("base_url", "").strip().rstrip("/") or None
+        settings.api_username = request.form.get("api_username", "").strip() or None
+        settings.sync_enabled = "sync_enabled" in request.form
+        settings.updated_at = datetime.now(timezone.utc)
+        settings.updated_by_id = current_user.id
+
+        new_pw = request.form.get("api_password", "").strip()
+        if new_pw:
+            settings.api_password = new_pw
+
+        db.session.commit()
+        flash("Castopod settings saved.", "success")
+        return redirect(url_for("admin.castopod_settings"))
+
+    return render_template("admin/castopod_settings.html", settings=settings, podcasts=None, test_error=None)
+
+
+@admin_bp.route("/settings/castopod/test", methods=["POST"])
+@login_required
+@admin_required
+def test_castopod():
+    settings = CastopodSettings.get()
+    if settings is None or not settings.base_url:
+        flash("Save a Castopod URL first.", "warning")
+        return redirect(url_for("admin.castopod_settings"))
+
+    podcasts, test_error = None, None
+    try:
+        podcasts = list_castopod_podcasts(settings)
+    except CastopodError as exc:
+        test_error = str(exc)
+    return render_template(
+        "admin/castopod_settings.html", settings=settings, podcasts=podcasts, test_error=test_error
     )
