@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — PodScheduler{% endblock %}
-{% block page_title %}<i class="bi bi-mic-fill me-2" style="color:#7c5cfc;"></i>PodScheduler{% endblock %}
+{% block page_title %}<i class="bi bi-mic-fill me-2" style="color:var(--ps-accent);"></i>PodScheduler{% endblock %}
 
 {% block content %}
 <!-- Stat pills -->
@@ -14,13 +14,13 @@
     </div>
     <div class="col-4">
       <div class="stat-pill">
-        <div class="stat-val" style="color:#60a5fa;">{{ scheduled_count }}</div>
+        <div class="stat-val" style="color:var(--ps-blue);">{{ scheduled_count }}</div>
         <div class="stat-lbl">Scheduled</div>
       </div>
     </div>
     <div class="col-4">
       <div class="stat-pill">
-        <div class="stat-val" style="color:#4ade80;">{{ published_count }}</div>
+        <div class="stat-val" style="color:var(--ps-green);">{{ published_count }}</div>
         <div class="stat-lbl">Published</div>
       </div>
     </div>
@@ -52,7 +52,7 @@
       </div>
       <div class="rc-end">
         <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value.replace('_', ' ') }}</span>
-        <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+        <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.25);"></i>
       </div>
     </a>
     {% endfor %}
@@ -77,7 +77,7 @@
       </div>
       <div class="rc-end">
         <span class="badge badge-status-{{ p.status.value }}">{{ p.status.value.replace('_', ' ') }}</span>
-        <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+        <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.25);"></i>
       </div>
     </a>
     {% endfor %}

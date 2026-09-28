@@ -4,11 +4,11 @@
 <div class="invite-page">
   <div style="width:100%;max-width:400px;">
     <div class="text-center mb-5">
-      <div style="width:64px;height:64px;background:rgba(124,92,252,.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-        <i class="bi bi-mic-fill" style="font-size:1.8rem;color:#7c5cfc;"></i>
+      <div style="width:64px;height:64px;background:rgba(var(--ps-accent-rgb),.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="bi bi-mic-fill" style="font-size:1.8rem;color:var(--ps-accent);"></i>
       </div>
       <h1 style="font-size:1.6rem;font-weight:800;margin-bottom:4px;">PodScheduler</h1>
-      <p style="color:rgba(255,255,255,.45);font-size:.9rem;margin:0;">Sign in to manage your podcasts</p>
+      <p style="color:rgba(var(--ps-ink-rgb),.45);font-size:.9rem;margin:0;">Sign in to manage your podcasts</p>
     </div>
     <form method="POST" novalidate>
       {{ form.hidden_tag() }}
@@ -23,7 +23,7 @@
         <div style="position:relative;">
           {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""),
              placeholder="••••••••", autocomplete="current-password", id="pw-input") }}
-          <button type="button" onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:1rem;" id="pw-eye">
+          <button type="button" onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(var(--ps-ink-rgb),.4);font-size:1rem;" id="pw-eye">
             <i class="bi bi-eye" id="pw-eye-icon"></i>
           </button>
         </div>

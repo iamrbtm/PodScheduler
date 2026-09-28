@@ -16,11 +16,11 @@
       <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
         <div style="min-width:0;">
           <div style="font-weight:700;font-size:.95rem;margin-bottom:2px;">{{ t.name }}</div>
-          <div style="font-size:.78rem;color:rgba(255,255,255,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          <div style="font-size:.78rem;color:rgba(var(--ps-ink-rgb),.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
             {{ t.subject[:60] }}{% if t.subject|length > 60 %}…{% endif %}
           </div>
         </div>
-        <span style="font-size:.72rem;color:rgba(255,255,255,.3);flex-shrink:0;margin-top:2px;">
+        <span style="font-size:.72rem;color:rgba(var(--ps-ink-rgb),.3);flex-shrink:0;margin-top:2px;">
           {{ t.updated_at.strftime('%b %d') if t.updated_at else '—' }}
         </span>
       </div>

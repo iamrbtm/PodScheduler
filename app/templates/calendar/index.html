@@ -47,7 +47,7 @@
     --fc-page-bg-color: transparent;
     --fc-neutral-bg-color: var(--ps-surface2);
     --fc-list-event-hover-bg-color: var(--ps-surface2);
-    --fc-today-bg-color: rgba(124,92,252,.08);
+    --fc-today-bg-color: rgba(var(--ps-accent-rgb),.08);
     color: var(--ps-text);
     padding: 0 14px;
   }
@@ -67,10 +67,13 @@
 {% endblock %}
 
 {% block content %}
+{# Legend dots use CSS tokens (theme-aware); FullCalendar's actual event
+   colors come from STATUS_COLORS in calendar.py (server-side JSON, fixed
+   dark-mode hex, intentionally not theme-aware — see spec). #}
 <div class="cal-legend">
   {% for status, color in [
-    ('Draft', '#8a8a99'), ('Scheduled', '#60a5fa'), ('Recorded', '#fb923c'),
-    ('Ready to Distribute', '#93c5fd'), ('Published', '#4ade80'), ('Cancelled', '#f87171')
+    ('Draft', 'var(--ps-gray)'), ('Scheduled', 'var(--ps-blue)'), ('Recorded', 'var(--ps-orange)'),
+    ('Ready to Distribute', 'var(--ps-blue-light)'), ('Published', 'var(--ps-green)'), ('Cancelled', 'var(--ps-red)')
   ] %}
   <span><span class="dot" style="background:{{ color }};"></span>{{ status }}</span>
   {% endfor %}
