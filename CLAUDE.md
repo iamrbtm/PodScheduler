@@ -33,7 +33,7 @@ A **mobile-first podcast scheduling platform** built for a small team. Producers
 # Start everything
 docker compose up --build
 
-# App is at http://localhost:5000
+# App is at http://localhost:27800
 # Default admin: admin@example.com / changeme123  (see .env)
 ```
 
@@ -103,6 +103,8 @@ PodScheduler/
 │   │   ├── participant.py   # Participant (the person, not tied to an episode)
 │   │   ├── podcast_participant.py  # PodcastParticipant join table + enums
 │   │   ├── directory_submission.py # DirectorySubmission, SubmissionStatus enum
+│   │   ├── mail_settings.py        # MailSettings — singleton SMTP config
+│   │   ├── calendar_settings.py    # CalendarSettings — singleton, holds the ICS feed_token
 │   │   └── email_template.py       # EmailTemplate, MERGE_FIELDS, render_blocks_*
 │   ├── forms/
 │   │   ├── __init__.py
@@ -120,16 +122,19 @@ PodScheduler/
 │   │   ├── invitations.py   # /invitations/<token>/accept|decline (no login)
 │   │   ├── email_templates.py  # /admin/email-templates/*
 │   │   ├── shows.py         # /admin/shows/* (CRUD + directory checklist)
-│   │   └── feed.py          # /feed/<slug>.xml — public RSS feed, no login
+│   │   ├── feed.py          # /feed/<slug>.xml — public RSS feed, no login
+│   │   └── calendar.py      # /calendar (page + events.json), /calendar/feed/<token>.ics (public)
 │   └── templates/
 │       ├── base.html        # App shell: fixed header + bottom nav
 │       ├── main/
 │       ├── auth/
 │       ├── podcasts/
 │       ├── participants/
+│       ├── calendar/        # index.html — FullCalendar list/grid page
 │       ├── admin/
 │       │   ├── email_templates/  # builder.html, index.html, preview.html
 │       │   ├── shows/            # index.html, form.html, directories.html
+│       │   ├── calendar_settings.html  # view/regenerate the ICS subscription link
 │       │   └── ...
 │       └── invitations/     # Standalone pages (no app shell, no login)
 ├── migrations/              # Alembic migration files
@@ -290,11 +295,51 @@ submission. The "publish everywhere" feature is built around that reality, not a
      everything else to `web`.
    - **Already running a reverse proxy (the common case for a homelab/NAS host)?** Don't start the
      `caddy` service at all — point your existing proxy at this app instead: forward the public
-     domain to `web`'s port `5000` for everything, plus a path rule for `/media` (or `/media/*`)
-     to `minio`'s port `9000` (published to the host for exactly this). In nginx-proxy-manager
-     that's a Proxy Host targeting the host's IP and port 5000, with a Custom Location for `/media`
-     targeting port 9000. Let the existing proxy handle HTTPS; it doesn't matter that `web` and
-     `minio` themselves speak plain HTTP internally.
+     domain to `web`'s container port `5000` for everything (published to the host as `27800` —
+     see `docker-compose.yml`), plus a path rule for `/media` (or `/media/*`) to `minio`'s port
+     `9000` (published to the host for exactly this). In nginx-proxy-manager that's a Proxy Host
+     targeting the host's IP and port 27800, with a Custom Location for `/media` targeting port
+     9000. Let the existing proxy handle HTTPS; it doesn't matter that `web` and `minio`
+     themselves speak plain HTTP internally.
+
+---
+
+## Calendar
+
+The **Calendar** bottom-nav tab (`/calendar`, `app/routes/calendar.py`) shows every podcast the
+current user can see (same visibility rule as the Podcasts tab: admins/`view_all` see everything,
+everyone else sees only episodes where they're `host_id` or `created_by_id`), color-coded by
+`PodcastStatus` using the `STATUS_COLORS` dict — copied by hand from `base.html`'s
+`.badge-status-*` colors and not derived any other way, so keep the two in sync manually if a
+status color ever changes. Rendered client-side with FullCalendar (CDN, no build step); the page
+itself fetches `GET /calendar/events.json` (login-required).
+
+A podcast becomes a calendar event using `scheduled_date` if set, else `published_at` as a
+fallback; a podcast with neither is omitted from the calendar entirely (still visible everywhere
+else in the app). **`scheduled_date` is a naive wall-clock value from a `DateTimeLocalField` — the
+same value every other page in this app displays verbatim, with no timezone conversion — and
+`_event_start()` deliberately keeps it naive/floating for exactly that reason.** `published_at` is
+genuinely UTC (`datetime.now(timezone.utc)` in `podcasts.py`) and is the only one of the two that
+gets `tzinfo=UTC` attached. Do not "fix" `_event_start()` to stamp both as UTC — that reintroduces
+a real bug (every scheduled episode shifts by the viewer's UTC offset), not a cleanup.
+
+A separate, **public, unauthenticated** ICS feed (`GET /calendar/feed/<token>.ics`) always returns
+the *entire* pipeline — every show, every status — regardless of who holds the link. This is
+intentional (see `docs/superpowers/specs/2026-09-28-calendar-page-design.md`), not a bug to scope
+down later: the feed's authorization model is the token itself (`CalendarSettings.feed_token`, a
+`secrets.token_urlsafe(32)` singleton row, same pattern as `MailSettings`), not the requesting
+user's own permissions — external calendar apps (Google/Outlook/Apple "subscribe by URL") have no
+way to authenticate as a PodScheduler user. Admins can view and regenerate the token at
+`/admin/settings/calendar` (`app/templates/admin/calendar_settings.html`); regenerating is the only
+revocation mechanism and takes effect immediately (no grace period — the old URL 404s on its very
+next fetch). `notes` and `topic` are deliberately excluded from both the JSON event payload and the
+ICS `DESCRIPTION` — don't add them without asking, since a leaked feed link would expose them to
+whoever holds it.
+
+Per-status event coloring is real in the in-app FullCalendar view, and the ICS `COLOR` property is
+set per-event too, but most calendar apps (Google especially) render an entire *subscribed*
+calendar in one flat color regardless of per-event `COLOR` — this is a limitation of those apps,
+not something fixable from this side.
 
 ---
 
@@ -305,7 +350,7 @@ submission. The "publish everywhere" feature is built around that reality, not a
 ### App shell (base.html)
 
 - Fixed top header: `56px`, back-button slot + title + action slot
-- Fixed bottom nav: `64px`, 6 tabs (Home, Podcasts, People, Templates, Admin, Me)
+- Fixed bottom nav: `64px`, up to 7 tabs (Home, Podcasts, Calendar, People, Templates, Admin, Me)
 - Content area: `padding-top: 68px; padding-bottom: 80px` (header + nav)
 - Max-width: `520px`, centered — looks native on phone, fine on tablet
 - Safe-area insets via `env(safe-area-inset-bottom)` for notched iPhones
@@ -468,13 +513,13 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 ## What this project does NOT have (don't add without asking)
 
 - No tests (yet)
-- No API / JSON endpoints (except `email_templates.save`)
+- No API / JSON endpoints, except `email_templates.save` and `calendar.events_json`
+  (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget)
 - No WebSockets or real-time updates
 - No file uploads beyond episode audio (`storage.upload_audio`) and show cover art
   (`storage.upload_cover_image`) — both go to MinIO. Don't add general-purpose file upload without asking.
 - No push-based directory integrations (YouTube Data API, etc.) — only the RSS feed + the manual
   submission checklist. This was an explicit scope decision (see the distribution section above),
   not an oversight — don't add one without asking, and check `app/directories.py` first if asked to.
-- No calendar integration
 - No multi-tenancy (single organization per deployment)
 - No desktop-specific layouts — the mobile layout IS the layout

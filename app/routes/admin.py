@@ -243,7 +243,11 @@ def calendar_settings():
         flash("Calendar subscription link regenerated. The old link no longer works.", "success")
         return redirect(url_for("admin.calendar_settings"))
 
-    https_url = url_for("calendar.ics_feed", token=settings.feed_token, _external=True)
+    # Built from PUBLIC_BASE_URL, not url_for(_external=True) — the request's
+    # Host/scheme aren't trustworthy behind a reverse proxy without a
+    # ProxyFix config, and this is the same domain feed.py's RSS links use.
+    feed_path = url_for("calendar.ics_feed", token=settings.feed_token)
+    https_url = f"{current_app.config['PUBLIC_BASE_URL']}{feed_path}"
     webcal_url = https_url.replace("https://", "webcal://").replace("http://", "webcal://")
 
     return render_template(

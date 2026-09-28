@@ -20,15 +20,21 @@ STATUS_COLORS = {
 }
 
 
-def _aware_utc(dt):
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
 def _event_start(podcast):
-    dt = podcast.scheduled_date or podcast.published_at
-    return _aware_utc(dt) if dt else None
+    # scheduled_date comes from a DateTimeLocalField and is stored — and
+    # displayed everywhere else in this app (podcasts/detail.html,
+    # main/dashboard.html) — as the naive wall-clock time the producer
+    # typed, with no timezone math applied anywhere. Keep it naive/floating
+    # here too, so FullCalendar and ICS clients render the same numbers
+    # instead of reinterpreting them as UTC and shifting by the viewer's
+    # offset. published_at is genuinely UTC (set via
+    # datetime.now(timezone.utc) in podcasts.py) and gets tagged as such.
+    if podcast.scheduled_date:
+        return podcast.scheduled_date
+    if podcast.published_at:
+        dt = podcast.published_at
+        return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+    return None
 
 
 def _event_duration_minutes(podcast):
