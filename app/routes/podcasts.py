@@ -97,9 +97,9 @@ def edit(podcast_id):
     form = PodcastForm(obj=podcast)
     form.host_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_active=True).order_by(User.username).all()]
     form.show_id.choices = [(0, "— No show —")] + [(s.id, s.title) for s in Show.query.order_by(Show.title).all()]
-    if podcast.status:
-        form.status.data = podcast.status.value if isinstance(podcast.status, PodcastStatus) else podcast.status
     if request.method == "GET":
+        if podcast.status:
+            form.status.data = podcast.status.value if isinstance(podcast.status, PodcastStatus) else podcast.status
         form.show_id.data = podcast.show_id or 0
 
     if form.validate_on_submit():
