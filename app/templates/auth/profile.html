@@ -96,7 +96,8 @@
         try {
           if (current === 'auto') {
             localStorage.removeItem('ps-theme');
-            document.documentElement.removeAttribute('data-bs-theme');
+            var resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', resolved);
           } else {
             localStorage.setItem('ps-theme', current);
             document.documentElement.setAttribute('data-bs-theme', current);

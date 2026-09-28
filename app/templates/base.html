@@ -3,11 +3,22 @@
 <head>
   <script>
     (function () {
+      function resolveAuto() {
+        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
       try {
         var t = localStorage.getItem('ps-theme');
-        if (t === 'light' || t === 'dark') {
-          document.documentElement.setAttribute('data-bs-theme', t);
-        }
+        if (t !== 'light' && t !== 'dark') t = resolveAuto();
+        document.documentElement.setAttribute('data-bs-theme', t);
+      } catch (e) {}
+      try {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () {
+          try {
+            if (!localStorage.getItem('ps-theme')) {
+              document.documentElement.setAttribute('data-bs-theme', resolveAuto());
+            }
+          } catch (e) {}
+        });
       } catch (e) {}
     })();
   </script>
@@ -79,20 +90,21 @@
         --ps-surface2: #e9e9f2;
         --ps-text: #14142b;
         --ps-ink-rgb: 10,10,22;
+        --ps-text-muted: #5b5b70;
 
-        --ps-green: #16a34a;
-        --ps-green-rgb: 22,163,74;
+        --ps-green: #15803d;
+        --ps-green-rgb: 21,128,61;
         --ps-red: #dc2626;
         --ps-red-rgb: 220,38,38;
         --ps-blue: #2563eb;
         --ps-blue-rgb: 37,99,235;
-        --ps-blue-light: #3b82f6;
+        --ps-blue-light: #4f46e5;
         --ps-orange: #c2410c;
         --ps-orange-rgb: 194,65,12;
         --ps-yellow: #b45309;
         --ps-yellow-rgb: 180,83,9;
-        --ps-cyan: #0284c7;
-        --ps-cyan-rgb: 2,132,199;
+        --ps-cyan: #0e7490;
+        --ps-cyan-rgb: 14,116,144;
         --ps-gray: #6b7280;
         --ps-purple-light: #7c3aed;
 
@@ -119,20 +131,21 @@
       --ps-surface2: #e9e9f2;
       --ps-text: #14142b;
       --ps-ink-rgb: 10,10,22;
+      --ps-text-muted: #5b5b70;
 
-      --ps-green: #16a34a;
-      --ps-green-rgb: 22,163,74;
+      --ps-green: #15803d;
+      --ps-green-rgb: 21,128,61;
       --ps-red: #dc2626;
       --ps-red-rgb: 220,38,38;
       --ps-blue: #2563eb;
       --ps-blue-rgb: 37,99,235;
-      --ps-blue-light: #3b82f6;
+      --ps-blue-light: #4f46e5;
       --ps-orange: #c2410c;
       --ps-orange-rgb: 194,65,12;
       --ps-yellow: #b45309;
       --ps-yellow-rgb: 180,83,9;
-      --ps-cyan: #0284c7;
-      --ps-cyan-rgb: 2,132,199;
+      --ps-cyan: #0e7490;
+      --ps-cyan-rgb: 14,116,144;
       --ps-gray: #6b7280;
       --ps-purple-light: #7c3aed;
 

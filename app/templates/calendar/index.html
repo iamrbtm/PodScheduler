@@ -94,7 +94,31 @@
     initialView: 'listMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
     height: 'auto',
-    events: '{{ url_for("calendar.events_json") }}',
+    events: {
+      url: '{{ url_for("calendar.events_json") }}',
+      success: function (events) {
+        // Recolor events with theme-aware CSS variables (matching the legend
+        // above) instead of the fixed dark-mode hex the JSON API reports —
+        // var() is a valid inline-style color value and resolves live against
+        // the current theme, including on a later Light/Dark toggle with no
+        // reload. calendar.py's STATUS_COLORS stays untouched — see spec.
+        var statusColorVar = {
+          'Draft': 'var(--ps-gray)',
+          'Scheduled': 'var(--ps-blue)',
+          'Recorded': 'var(--ps-orange)',
+          'Ready To Distribute': 'var(--ps-blue-light)',
+          'Published': 'var(--ps-green)',
+          'Cancelled': 'var(--ps-red)',
+        };
+        events.forEach(function (ev) {
+          var status = ev.extendedProps && ev.extendedProps.status;
+          if (status && statusColorVar[status]) {
+            ev.color = statusColorVar[status];
+          }
+        });
+        return events;
+      },
+    },
     eventClick: function (info) {
       info.jsEvent.preventDefault();
       if (info.event.url) { window.location.href = info.event.url; }
