@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Calendar — PodScheduler{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+{% block topbar_actions %}
+{% if current_user.is_admin() %}
+<a href="{{ url_for('admin.calendar_settings') }}" class="btn btn-sm" style="background:var(--ps-surface2);color:var(--ps-text);">
+  <i class="bi bi-link-45deg"></i>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<style>
+  .cal-toggle { display: flex; gap: 8px; padding: 4px 14px 12px; }
+  .cal-toggle button {
+    flex: 1;
+    background: var(--ps-surface2);
+    border: 1px solid var(--ps-border);
+    border-radius: 12px;
+    color: var(--ps-text-muted);
+    font-size: .82rem;
+    padding: 8px 0;
+    min-height: 40px;
+  }
+  .cal-toggle button.active {
+    background: var(--ps-accent-dim);
+    border-color: var(--ps-accent);
+    color: var(--ps-text);
+  }
+  .cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 0 14px 12px;
+    font-size: .72rem;
+    color: var(--ps-text-muted);
+  }
+  .cal-legend .dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  #calendarRoot {
+    --fc-border-color: var(--ps-border);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: var(--ps-surface2);
+    --fc-list-event-hover-bg-color: var(--ps-surface2);
+    --fc-today-bg-color: rgba(124,92,252,.08);
+    color: var(--ps-text);
+    padding: 0 14px;
+  }
+  #calendarRoot .fc-list-day-cushion { background: var(--ps-surface2); }
+  #calendarRoot a { color: var(--ps-text); }
+  #calendarRoot .fc-toolbar-title { font-size: 1rem; }
+  #calendarRoot .fc-button {
+    background: var(--ps-surface2);
+    border: 1px solid var(--ps-border);
+    color: var(--ps-text);
+  }
+  #calendarRoot .fc-button:hover { background: var(--ps-accent-dim); }
+  #calendarRoot .fc-button-active { background: var(--ps-accent) !important; border-color: var(--ps-accent) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cal-legend">
+  {% for status, color in [
+    ('Draft', '#8a8a99'), ('Scheduled', '#60a5fa'), ('Recorded', '#fb923c'),
+    ('Ready to Distribute', '#93c5fd'), ('Published', '#4ade80'), ('Cancelled', '#f87171')
+  ] %}
+  <span><span class="dot" style="background:{{ color }};"></span>{{ status }}</span>
+  {% endfor %}
+</div>
+
+<div class="cal-toggle">
+  <button type="button" id="btnList" class="active" onclick="setCalView('listMonth', this)">List</button>
+  <button type="button" id="btnGrid" onclick="setCalView('dayGridMonth', this)">Month Grid</button>
+</div>
+
+<div id="calendarRoot"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  var calendarEl = document.getElementById('calendarRoot');
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'listMonth',
+    headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+    height: 'auto',
+    events: '{{ url_for("calendar.events_json") }}',
+    eventClick: function (info) {
+      info.jsEvent.preventDefault();
+      if (info.event.url) { window.location.href = info.event.url; }
+    },
+  });
+  calendar.render();
+
+  function setCalView(viewName, btn) {
+    calendar.changeView(viewName);
+    document.getElementById('btnList').classList.remove('active');
+    document.getElementById('btnGrid').classList.remove('active');
+    btn.classList.add('active');
+  }
+</script>
+{% endblock %}

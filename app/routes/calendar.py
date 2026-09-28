@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, Response, current_app, url_for, jsonify
+from flask import Blueprint, Response, current_app, url_for, jsonify, render_template
 from flask_login import login_required, current_user
 from icalendar import Calendar, Event
 
@@ -131,3 +131,9 @@ def events_json():
     podcasts = _visible_podcasts().all()
     events = [_event_payload(p) for p in podcasts if _event_start(p) is not None]
     return jsonify(events)
+
+
+@calendar_bp.route("/calendar")
+@login_required
+def index():
+    return render_template("calendar/index.html")

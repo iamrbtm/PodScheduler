@@ -434,6 +434,10 @@
       <i class="bi bi-collection-play{% if request.blueprint == 'podcasts' %}-fill{% endif %}"></i>
       <span>Podcasts</span>
     </a>
+    <a href="{{ url_for('calendar.index') }}" class="nav-tab {% if request.blueprint == 'calendar' %}active{% endif %}">
+      <i class="bi bi-calendar3{% if request.blueprint == 'calendar' %}-fill{% endif %}"></i>
+      <span>Calendar</span>
+    </a>
     <a href="{{ url_for('participants.index') }}" class="nav-tab {% if request.blueprint == 'participants' %}active{% endif %}">
       <i class="bi bi-people{% if request.blueprint == 'participants' %}-fill{% endif %}"></i>
       <span>People</span>
