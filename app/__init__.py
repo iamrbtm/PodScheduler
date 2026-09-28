@@ -1,6 +1,5 @@
 import os
 from flask import Flask
-from werkzeug.middleware.proxy_fix import ProxyFix
 from .extensions import db, login_manager, mail, migrate, csrf
 from .config import config_by_name
 
@@ -12,11 +11,6 @@ def create_app(config_name=None):
         config_name = os.getenv("FLASK_ENV", "production")
 
     app.config.from_object(config_by_name[config_name])
-
-    # Trust one reverse proxy hop (NPM or the bundled Caddy) so
-    # url_for(_external=True), e.g. invitation accept/decline links,
-    # uses https:// and the public host instead of http://.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     db.init_app(app)
     login_manager.init_app(app)

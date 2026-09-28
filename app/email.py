@@ -10,17 +10,15 @@ def _build_context(podcast_participant):
     host = podcast.host
     scheduled = podcast.scheduled_date
 
-    accept_url = url_for(
-        "invitations.respond",
-        token=pp.invitation_token,
-        action="accept",
-        _external=True,
+    # Built from PUBLIC_BASE_URL, not url_for(_external=True): the request's
+    # Host/scheme come from whoever reached the app, which behind a reverse
+    # proxy is plain HTTP and can be spoofed by anyone hitting the port directly.
+    base_url = current_app.config["PUBLIC_BASE_URL"]
+    accept_url = base_url + url_for(
+        "invitations.respond", token=pp.invitation_token, action="accept"
     )
-    decline_url = url_for(
-        "invitations.respond",
-        token=pp.invitation_token,
-        action="decline",
-        _external=True,
+    decline_url = base_url + url_for(
+        "invitations.respond", token=pp.invitation_token, action="decline"
     )
 
     first_name = participant.name.split()[0] if participant.name else participant.name

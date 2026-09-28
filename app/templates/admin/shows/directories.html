@@ -12,7 +12,7 @@
   <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
     <div class="card-body" style="padding:12px 16px;">
       <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Your public feed URL</div>
-      <div id="feedUrlText" style="font-size:.85rem;font-weight:600;word-break:break-all;margin-bottom:8px;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
+      <div id="feedUrlText" style="font-size:.85rem;font-weight:600;word-break:break-all;margin-bottom:8px;">{{ config.PUBLIC_BASE_URL }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
       <button type="button" class="btn btn-sm" style="background:rgba(124,92,252,.15);color:#7c5cfc;"
               onclick="navigator.clipboard.writeText(document.getElementById('feedUrlText').textContent.trim())">
         <i class="bi bi-clipboard me-1"></i>Copy
