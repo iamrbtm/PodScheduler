@@ -35,14 +35,14 @@
       </div>
     </div>
     <div class="card-body">
-      {% if r.description %}<p style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:10px;">{{ r.description }}</p>{% endif %}
+      {% if r.description %}<p style="font-size:.82rem;color:rgba(var(--ps-ink-rgb),.5);margin-bottom:10px;">{{ r.description }}</p>{% endif %}
       <div class="d-flex flex-wrap gap-1">
         {% if r.permissions %}
           {% for p in r.permissions.split(',') if p %}
-          <span class="badge" style="background:rgba(124,92,252,.15);color:#a78bfa;border:1px solid rgba(124,92,252,.25);">{{ p.replace('_', ' ') }}</span>
+          <span class="badge" style="background:rgba(var(--ps-accent-rgb),.15);color:var(--ps-purple-light);border:1px solid rgba(var(--ps-accent-rgb),.25);">{{ p.replace('_', ' ') }}</span>
           {% endfor %}
         {% else %}
-        <span style="font-size:.8rem;color:rgba(255,255,255,.3);">No permissions</span>
+        <span style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.3);">No permissions</span>
         {% endif %}
       </div>
     </div>

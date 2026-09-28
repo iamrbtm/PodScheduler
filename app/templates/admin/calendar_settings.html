@@ -8,9 +8,9 @@
 {% block content %}
 <div class="page-pad">
 
-  <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+  <div class="card mb-3" style="border:1px solid rgba(var(--ps-accent-rgb),.3);">
     <div class="card-body" style="padding:12px 16px;">
-      <div style="font-size:.85rem;color:rgba(255,255,255,.6);">
+      <div style="font-size:.85rem;color:rgba(var(--ps-ink-rgb),.6);">
         Anyone with this link can view every podcast in the pipeline (all
         statuses) from any calendar app that supports "subscribe by URL" —
         it does not require logging in. Treat it like a password: only
@@ -18,7 +18,7 @@
         regenerate it if it ever leaks.
       </div>
       {% if settings.updated_at %}
-      <div style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:8px;">
+      <div style="font-size:.72rem;color:rgba(var(--ps-ink-rgb),.3);margin-top:8px;">
         Last regenerated {{ settings.updated_at.strftime('%b %d, %Y') }}{% if settings.updated_by %} by {{ settings.updated_by.username }}{% endif %}
       </div>
       {% endif %}
@@ -57,7 +57,7 @@
         onsubmit="return confirm('Regenerate the link? The old link will stop working immediately.');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-full mb-3"
-            style="background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);">
+            style="background:rgba(var(--ps-red-rgb),.1);color:var(--ps-red);border:1px solid rgba(var(--ps-red-rgb),.2);">
       <i class="bi bi-arrow-repeat me-2"></i>Regenerate Link
     </button>
   </form>

@@ -8,19 +8,19 @@
   <div class="row g-2 mb-2">
     <div class="col-4">
       <div class="stat-pill">
-        <div class="stat-val" style="color:#facc15;">{{ users|length }}</div>
+        <div class="stat-val" style="color:var(--ps-yellow);">{{ users|length }}</div>
         <div class="stat-lbl">Users</div>
       </div>
     </div>
     <div class="col-4">
       <div class="stat-pill">
-        <div class="stat-val" style="color:#38bdf8;">{{ roles|length }}</div>
+        <div class="stat-val" style="color:var(--ps-cyan);">{{ roles|length }}</div>
         <div class="stat-lbl">Roles</div>
       </div>
     </div>
     <div class="col-4">
       <div class="stat-pill">
-        <div class="stat-val" style="color:#4ade80;">{{ users|selectattr('is_active')|list|length }}</div>
+        <div class="stat-val" style="color:var(--ps-green);">{{ users|selectattr('is_active')|list|length }}</div>
         <div class="stat-lbl">Active</div>
       </div>
     </div>
@@ -37,8 +37,8 @@
 <div class="page-pad mb-1">
   {% for u in users[:6] %}
   <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="row-card">
-    <div class="rc-icon" style="background:rgba(250,204,21,.1);">
-      <i class="bi bi-person" style="color:#facc15;"></i>
+    <div class="rc-icon" style="background:rgba(var(--ps-yellow-rgb),.1);">
+      <i class="bi bi-person" style="color:var(--ps-yellow);"></i>
     </div>
     <div class="rc-body">
       <div class="rc-title">{{ u.username }}</div>
@@ -51,11 +51,11 @@
   </a>
   {% endfor %}
   {% if users|length > 6 %}
-  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:#7c5cfc;padding:8px;">
+  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:var(--ps-accent);padding:8px;">
     View all {{ users|length }} users →
   </a>
   {% else %}
-  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:rgba(255,255,255,.35);padding:8px;">
+  <a href="{{ url_for('admin.users') }}" style="display:block;text-align:center;font-size:.82rem;color:rgba(var(--ps-ink-rgb),.35);padding:8px;">
     Manage all users
   </a>
   {% endif %}
@@ -65,39 +65,39 @@
 <div class="section-title">System</div>
 <div class="page-pad mb-1">
   <a href="{{ url_for('admin.mail_settings') }}" class="row-card">
-    <div class="rc-icon" style="background:rgba(74,222,128,.08);">
-      <i class="bi bi-envelope-at" style="color:#4ade80;"></i>
+    <div class="rc-icon" style="background:rgba(var(--ps-green-rgb),.08);">
+      <i class="bi bi-envelope-at" style="color:var(--ps-green);"></i>
     </div>
     <div class="rc-body">
       <div class="rc-title">Mail Settings</div>
       <div class="rc-sub">SMTP server, credentials, sender address</div>
     </div>
     <div class="rc-end">
-      <i class="bi bi-chevron-right" style="color:rgba(255,255,255,.2);"></i>
+      <i class="bi bi-chevron-right" style="color:rgba(var(--ps-ink-rgb),.2);"></i>
     </div>
   </a>
   <a href="{{ url_for('admin.calendar_settings') }}" class="row-card">
-    <div class="rc-icon" style="background:rgba(96,165,250,.08);">
-      <i class="bi bi-calendar3" style="color:#60a5fa;"></i>
+    <div class="rc-icon" style="background:rgba(var(--ps-blue-rgb),.08);">
+      <i class="bi bi-calendar3" style="color:var(--ps-blue);"></i>
     </div>
     <div class="rc-body">
       <div class="rc-title">Calendar Settings</div>
       <div class="rc-sub">Subscription link for Google/Outlook/iCal</div>
     </div>
     <div class="rc-end">
-      <i class="bi bi-chevron-right" style="color:rgba(255,255,255,.2);"></i>
+      <i class="bi bi-chevron-right" style="color:rgba(var(--ps-ink-rgb),.2);"></i>
     </div>
   </a>
   <a href="{{ url_for('shows.index') }}" class="row-card">
-    <div class="rc-icon" style="background:rgba(124,92,252,.1);">
-      <i class="bi bi-mic" style="color:#7c5cfc;"></i>
+    <div class="rc-icon" style="background:rgba(var(--ps-accent-rgb),.1);">
+      <i class="bi bi-mic" style="color:var(--ps-accent);"></i>
     </div>
     <div class="rc-body">
       <div class="rc-title">Shows</div>
       <div class="rc-sub">RSS feeds and directory publishing</div>
     </div>
     <div class="rc-end">
-      <i class="bi bi-chevron-right" style="color:rgba(255,255,255,.2);"></i>
+      <i class="bi bi-chevron-right" style="color:rgba(var(--ps-ink-rgb),.2);"></i>
     </div>
   </a>
 </div>
@@ -112,8 +112,8 @@
 <div class="page-pad">
   {% for r in roles %}
   <a href="{{ url_for('admin.edit_role', role_id=r.id) }}" class="row-card">
-    <div class="rc-icon" style="background:rgba(56,189,248,.1);">
-      <i class="bi bi-shield-lock" style="color:#38bdf8;"></i>
+    <div class="rc-icon" style="background:rgba(var(--ps-cyan-rgb),.1);">
+      <i class="bi bi-shield-lock" style="color:var(--ps-cyan);"></i>
     </div>
     <div class="rc-body">
       <div class="rc-title text-capitalize">{{ r.name }}</div>
