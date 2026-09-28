@@ -73,7 +73,7 @@ services:
   # Traefik, Caddy, etc. — ports 80/443 already bound), don't start this
   # service at all: it'll just fight the existing one for those ports.
   # Instead, point your existing proxy at `web:5000` (or the host's published
-  # 5000) for everything, and at `minio:9000` (or the host's published 9000)
+  # 27800) for everything, and at `minio:9000` (or the host's published 9000)
   # for the `/media` path specifically. See CLAUDE.md's distribution section.
   caddy:
     image: caddy:2-alpine
