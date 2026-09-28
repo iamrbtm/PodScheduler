@@ -14,21 +14,21 @@
 <style>
   .builder-meta { padding: 0 14px 4px; display: flex; flex-direction: column; gap: 10px; }
   .builder-meta input {
-    background: #1c1c36;
-    border: 1px solid rgba(255,255,255,.12);
+    background: var(--ps-surface2);
+    border: 1px solid rgba(var(--ps-ink-rgb),.12);
     border-radius: 12px;
-    color: #f0f0ff;
+    color: var(--ps-text);
     font-size: 1rem;
     padding: 11px 14px;
     width: 100%;
   }
-  .builder-meta input:focus { outline: none; border-color: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,.2); }
-  .builder-meta label { font-size: .75rem; font-weight: 600; color: rgba(255,255,255,.45); margin-bottom: 4px; }
+  .builder-meta input:focus { outline: none; border-color: var(--ps-accent); box-shadow: 0 0 0 3px rgba(var(--ps-accent-rgb),.2); }
+  .builder-meta label { font-size: .75rem; font-weight: 600; color: rgba(var(--ps-ink-rgb),.45); margin-bottom: 4px; }
 
   .canvas { padding: 0 14px 12px; }
   .canvas-block {
-    background: #1c1c36;
-    border: 1px solid rgba(255,255,255,.1);
+    background: var(--ps-surface2);
+    border: 1px solid rgba(var(--ps-ink-rgb),.1);
     border-radius: 14px;
     padding: 12px 14px;
     margin-bottom: 8px;
@@ -36,27 +36,27 @@
     cursor: pointer;
     transition: border-color .15s;
   }
-  .canvas-block.selected { border-color: #7c5cfc; }
+  .canvas-block.selected { border-color: var(--ps-accent); }
   .canvas-block .blk-label {
     font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
-    color: rgba(255,255,255,.3); margin-bottom: 6px;
+    color: rgba(var(--ps-ink-rgb),.3); margin-bottom: 6px;
     display: flex; align-items: center; gap: 6px;
   }
   .canvas-block .blk-label .drag-handle { cursor: grab; touch-action: none; }
   .canvas-block .blk-delete {
     position: absolute; top: 10px; right: 10px;
-    background: rgba(220,53,69,.15); border: none; border-radius: 7px;
-    color: #f87171; padding: 4px 8px; font-size: .75rem; cursor: pointer;
+    background: rgba(var(--ps-red-rgb),.15); border: none; border-radius: 7px;
+    color: var(--ps-red); padding: 4px 8px; font-size: .75rem; cursor: pointer;
   }
-  .preview-header { background: #12122a; border-radius: 8px; padding: 10px; text-align: center; font-weight: 700; font-size: .95rem; }
-  .preview-text, .preview-detail-box { font-size: .82rem; color: rgba(255,255,255,.65); white-space: pre-wrap; word-break: break-word; }
-  .preview-detail-box { background: #0d0d22; border-radius: 8px; padding: 10px; }
+  .preview-header { background: var(--ps-surface); border-radius: 8px; padding: 10px; text-align: center; font-weight: 700; font-size: .95rem; }
+  .preview-text, .preview-detail-box { font-size: .82rem; color: rgba(var(--ps-ink-rgb),.65); white-space: pre-wrap; word-break: break-word; }
+  .preview-detail-box { background: var(--ps-bg); border-radius: 8px; padding: 10px; }
   .preview-buttons { display: flex; gap: 8px; justify-content: center; }
-  .preview-btn-a { background: #166534; color: #4ade80; border-radius: 8px; padding: 6px 16px; font-size: .82rem; }
-  .preview-btn-d { background: #7f1d1d; color: #f87171; border-radius: 8px; padding: 6px 16px; font-size: .82rem; }
-  .preview-divider { border-top: 1px solid rgba(255,255,255,.15); margin: 2px 0; }
-  .preview-footer { color: rgba(255,255,255,.3); font-size: .75rem; text-align: center; }
-  .preview-spacer { color: rgba(255,255,255,.2); font-size: .72rem; text-align: center; }
+  .preview-btn-a { background: var(--ps-badge-published-bg); color: var(--ps-badge-published-fg); border-radius: 8px; padding: 6px 16px; font-size: .82rem; }
+  .preview-btn-d { background: var(--ps-badge-cancelled-bg); color: var(--ps-badge-cancelled-fg); border-radius: 8px; padding: 6px 16px; font-size: .82rem; }
+  .preview-divider { border-top: 1px solid rgba(var(--ps-ink-rgb),.15); margin: 2px 0; }
+  .preview-footer { color: rgba(var(--ps-ink-rgb),.3); font-size: .75rem; text-align: center; }
+  .preview-spacer { color: rgba(var(--ps-ink-rgb),.2); font-size: .72rem; text-align: center; }
 
   .block-toolbar {
     overflow-x: auto; display: flex; gap: 8px;
@@ -65,30 +65,30 @@
   .block-toolbar::-webkit-scrollbar { display: none; }
   .block-chip {
     flex-shrink: 0;
-    background: #1c1c36; border: 1px solid rgba(255,255,255,.12);
+    background: var(--ps-surface2); border: 1px solid rgba(var(--ps-ink-rgb),.12);
     border-radius: 20px; padding: 7px 14px; font-size: .8rem;
-    color: rgba(255,255,255,.7); cursor: pointer;
+    color: rgba(var(--ps-ink-rgb),.7); cursor: pointer;
     display: flex; align-items: center; gap: 6px; white-space: nowrap;
     transition: background .15s;
   }
-  .block-chip:hover, .block-chip:active { background: rgba(124,92,252,.2); border-color: #7c5cfc; color: #f0f0ff; }
+  .block-chip:hover, .block-chip:active { background: rgba(var(--ps-accent-rgb),.2); border-color: var(--ps-accent); color: var(--ps-text); }
 
   .editor-field { margin-bottom: 14px; }
-  .editor-field label { font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.45); display: block; margin-bottom: 5px; }
+  .editor-field label { font-size: .78rem; font-weight: 600; color: rgba(var(--ps-ink-rgb),.45); display: block; margin-bottom: 5px; }
   .editor-field textarea, .editor-field input[type=text], .editor-field input[type=number] {
-    background: #12122a; border: 1px solid rgba(255,255,255,.1);
-    border-radius: 10px; color: #f0f0ff; font-size: .95rem;
+    background: var(--ps-surface); border: 1px solid rgba(var(--ps-ink-rgb),.1);
+    border-radius: 10px; color: var(--ps-text); font-size: .95rem;
     padding: 10px 12px; width: 100%; resize: none;
   }
-  .editor-field textarea:focus, .editor-field input:focus { outline: none; border-color: #7c5cfc; }
+  .editor-field textarea:focus, .editor-field input:focus { outline: none; border-color: var(--ps-accent); }
 
   .merge-chip {
     display: inline-block;
-    background: rgba(124,92,252,.12); border: 1px solid rgba(124,92,252,.25);
+    background: rgba(var(--ps-accent-rgb),.12); border: 1px solid rgba(var(--ps-accent-rgb),.25);
     border-radius: 6px; padding: 4px 8px; margin: 3px;
-    font-size: .73rem; color: #a78bfa; font-family: monospace; cursor: pointer;
+    font-size: .73rem; color: var(--ps-purple-light); font-family: monospace; cursor: pointer;
   }
-  .merge-chip:hover { background: rgba(124,92,252,.25); }
+  .merge-chip:hover { background: rgba(var(--ps-accent-rgb),.25); }
   .sortable-ghost { opacity: .3; }
 </style>
 {% endblock %}
@@ -110,7 +110,7 @@
 
 <div class="section-title" style="padding-left:14px;">Email Blocks</div>
 <div id="canvas" class="canvas">
-  <div id="canvas-empty" style="display:none;padding:32px 0;text-align:center;color:rgba(255,255,255,.2);font-size:.85rem;">
+  <div id="canvas-empty" style="display:none;padding:32px 0;text-align:center;color:rgba(var(--ps-ink-rgb),.2);font-size:.85rem;">
     Tap a block below to add it
   </div>
 </div>
@@ -227,7 +227,7 @@ function refreshPreview(b, el) {
   const p = el.querySelector('.blk-preview');
   if (!p) return;
   const safe = s => (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, function(_,k){ return '<span style="color:#a78bfa;font-family:monospace;font-size:.75em;">{{' + k + '}}</span>'; });
+  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, function(_,k){ return '<span style="color:var(--ps-purple-light);font-family:monospace;font-size:.75em;">{{' + k + '}}</span>'; });
   switch (b.type) {
     case 'header':     p.innerHTML = `<div class="preview-header">${hl(b.content)}</div>`; break;
     case 'text':       p.innerHTML = `<div class="preview-text">${hl(b.content)}</div>`; break;
@@ -271,7 +271,7 @@ function openEditor(id) {
     case 'button_row': html = field('Accept Label', 'accept_text', b.accept_text) + field('Decline Label', 'decline_text', b.decline_text); break;
     case 'spacer':     html = field('Height (px)', 'height', b.height, false, 0, 'number'); break;
     case 'footer':     html = field('Footer Text', 'content', b.content, true, 3); break;
-    case 'divider':    html = '<p style="color:rgba(255,255,255,.4);font-size:.85rem;padding:4px 0;">No settings.</p>'; break;
+    case 'divider':    html = '<p style="color:rgba(var(--ps-ink-rgb),.4);font-size:.85rem;padding:4px 0;">No settings.</p>'; break;
   }
   fields.innerHTML = html;
   fields.querySelectorAll('[data-field]').forEach(el => {
