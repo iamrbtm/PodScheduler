@@ -9,18 +9,18 @@
 <div class="page-pad">
 
   <!-- Feed URL card -->
-  <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+  <div class="card mb-3" style="border:1px solid rgba(var(--ps-accent-rgb),.3);">
     <div class="card-body" style="padding:12px 16px;">
-      <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Your public feed URL</div>
+      <div style="font-size:.78rem;color:rgba(var(--ps-ink-rgb),.5);margin-bottom:4px;">Your public feed URL</div>
       <div id="feedUrlText" style="font-size:.85rem;font-weight:600;word-break:break-all;margin-bottom:8px;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
-      <button type="button" class="btn btn-sm" style="background:rgba(124,92,252,.15);color:#7c5cfc;"
+      <button type="button" class="btn btn-sm" style="background:rgba(var(--ps-accent-rgb),.15);color:var(--ps-accent);"
               onclick="navigator.clipboard.writeText(document.getElementById('feedUrlText').textContent.trim())">
         <i class="bi bi-clipboard me-1"></i>Copy
       </button>
     </div>
   </div>
 
-  <p style="font-size:.8rem;color:rgba(255,255,255,.45);margin-bottom:16px;">
+  <p style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.45);margin-bottom:16px;">
     Submit your feed URL to each directory once. After that, new published episodes appear on all of them
     automatically — there's nothing to click per episode. Check them off as you go.
   </p>
@@ -37,13 +37,13 @@
     </div>
     <div class="rc-end">
       {% if d.status == 'live' %}
-      <span class="badge" style="background:#0a3a1e;color:#4ade80;">Live</span>
+      <span class="badge" style="background:var(--ps-badge-published-bg);color:var(--ps-badge-published-fg);">Live</span>
       {% elif d.status == 'submitted' %}
-      <span class="badge" style="background:#1e2f6e;color:#93c5fd;">Submitted</span>
+      <span class="badge" style="background:var(--ps-badge-ready-bg);color:var(--ps-badge-ready-fg);">Submitted</span>
       {% else %}
-      <span class="badge" style="background:#3a3a4a;color:#aaa;">Not submitted</span>
+      <span class="badge" style="background:var(--ps-badge-draft-bg);color:var(--ps-badge-draft-fg);">Not submitted</span>
       {% endif %}
-      <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(255,255,255,.25);"></i>
+      <i class="bi bi-chevron-right" style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.25);"></i>
     </div>
   </button>
   {% endfor %}
@@ -57,14 +57,14 @@
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
   <div class="offcanvas-body">
-    <p id="directoryNote" style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:16px;"></p>
+    <p id="directoryNote" style="font-size:.82rem;color:rgba(var(--ps-ink-rgb),.5);margin-bottom:16px;"></p>
     <a id="directorySubmitLink" href="#" target="_blank" rel="noopener" class="btn btn-full mb-3"
-       style="background:rgba(124,92,252,.15);color:#7c5cfc;border:1px solid rgba(124,92,252,.3);">
+       style="background:rgba(var(--ps-accent-rgb),.15);color:var(--ps-accent);border:1px solid rgba(var(--ps-accent-rgb),.3);">
       <i class="bi bi-box-arrow-up-right me-2"></i>Open Submission Page
     </a>
     <form method="POST" id="directoryStatusForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="form-label" style="font-size:.82rem;color:rgba(255,255,255,.5);">Status</label>
+      <label class="form-label" style="font-size:.82rem;color:rgba(var(--ps-ink-rgb),.5);">Status</label>
       <select name="status" id="directoryStatusSelect" class="form-select mb-3">
         <option value="not_submitted">Not submitted</option>
         <option value="submitted">Submitted</option>

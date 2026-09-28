@@ -28,7 +28,7 @@
     </a>
     <div class="rc-end">
       {% if not show.is_feed_ready %}
-      <span class="badge" style="background:#3d2506;color:#fb923c;">Incomplete</span>
+      <span class="badge" style="background:var(--ps-badge-recorded-bg);color:var(--ps-badge-recorded-fg);">Incomplete</span>
       {% endif %}
       <a href="{{ url_for('shows.directories', show_id=show.id) }}" style="color:var(--ps-accent);font-size:.78rem;">
         <i class="bi bi-broadcast"></i> Directories

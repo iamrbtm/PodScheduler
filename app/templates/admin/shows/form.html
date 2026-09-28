@@ -11,9 +11,9 @@
     {{ form.hidden_tag() }}
 
     {% if show %}
-    <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+    <div class="card mb-3" style="border:1px solid rgba(var(--ps-accent-rgb),.3);">
       <div class="card-body" style="padding:12px 16px;">
-        <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:4px;">Public feed URL</div>
+        <div style="font-size:.78rem;color:rgba(var(--ps-ink-rgb),.5);margin-bottom:4px;">Public feed URL</div>
         <div style="font-size:.85rem;font-weight:600;word-break:break-all;">{{ request.url_root.rstrip('/') }}{{ url_for('feed.rss', slug=show.feed_slug) }}</div>
       </div>
     </div>
@@ -31,7 +31,7 @@
           {{ form.feed_slug.label(class="form-label") }}
           {{ form.feed_slug(class="form-control" + (" is-invalid" if form.feed_slug.errors else ""), placeholder="my-podcast", autocomplete="off") }}
           {% for e in form.feed_slug.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Used in your public feed URL — cannot be easily changed once submitted to directories.</div>
+          <div style="font-size:.75rem;color:rgba(var(--ps-ink-rgb),.3);margin-top:6px;">Used in your public feed URL — cannot be easily changed once submitted to directories.</div>
         </div>
         <div>
           {{ form.description.label(class="form-label") }}
@@ -52,7 +52,7 @@
           {{ form.owner_email.label(class="form-label") }}
           {{ form.owner_email(class="form-control" + (" is-invalid" if form.owner_email.errors else ""), inputmode="email", placeholder="you@yourpodcast.com") }}
           {% for e in form.owner_email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Directories use this to contact you about the show.</div>
+          <div style="font-size:.75rem;color:rgba(var(--ps-ink-rgb),.3);margin-top:6px;">Directories use this to contact you about the show.</div>
         </div>
         <div>
           {{ form.website_url.label(class="form-label") }}
@@ -85,7 +85,7 @@
           {% endif %}
           {{ form.cover_image(class="form-control" + (" is-invalid" if form.cover_image.errors else "")) }}
           {% for e in form.cover_image.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-          <div style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;">Apple requires at least 1400×1400px, JPG or PNG.</div>
+          <div style="font-size:.75rem;color:rgba(var(--ps-ink-rgb),.3);margin-top:6px;">Apple requires at least 1400×1400px, JPG or PNG.</div>
         </div>
       </div>
     </div>
