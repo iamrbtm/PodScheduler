@@ -7,6 +7,7 @@ from .podcast_participant import PodcastParticipant, InvitationStatus, Participa
 from .email_template import EmailTemplate, MERGE_FIELDS
 from .mail_settings import MailSettings
 from .directory_submission import DirectorySubmission, SubmissionStatus
+from .calendar_settings import CalendarSettings
 
 __all__ = [
     "Role", "User",
@@ -17,4 +18,5 @@ __all__ = [
     "EmailTemplate", "MERGE_FIELDS",
     "MailSettings",
     "DirectorySubmission", "SubmissionStatus",
+    "CalendarSettings",
 ]
