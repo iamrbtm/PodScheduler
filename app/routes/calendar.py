@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, Response, current_app, url_for
+from flask import Blueprint, Response, current_app, url_for, jsonify
+from flask_login import login_required, current_user
 from icalendar import Calendar, Event
 
 from ..models import Podcast, PodcastStatus
@@ -93,3 +94,40 @@ def ics_feed(token):
         mimetype="text/calendar",
         headers={"Content-Disposition": "inline; filename=podscheduler-pipeline.ics"},
     )
+
+
+def _visible_podcasts():
+    query = Podcast.query
+    if not current_user.is_admin() and not current_user.has_permission("view_all"):
+        query = query.filter(
+            (Podcast.host_id == current_user.id) |
+            (Podcast.created_by_id == current_user.id)
+        )
+    return query
+
+
+def _event_payload(podcast):
+    start = _event_start(podcast)
+    end = start + timedelta(minutes=_event_duration_minutes(podcast))
+    return {
+        "id": podcast.id,
+        "title": podcast.title,
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "color": STATUS_COLORS[podcast.status],
+        "url": url_for("podcasts.detail", podcast_id=podcast.id),
+        "extendedProps": {
+            "status": podcast.status.value.replace("_", " ").title(),
+            "host": podcast.host.username if podcast.host else None,
+            "show": podcast.show.title if podcast.show else None,
+            "participantCount": podcast.participant_count,
+        },
+    }
+
+
+@calendar_bp.route("/calendar/events.json")
+@login_required
+def events_json():
+    podcasts = _visible_podcasts().all()
+    events = [_event_payload(p) for p in podcasts if _event_start(p) is not None]
+    return jsonify(events)
