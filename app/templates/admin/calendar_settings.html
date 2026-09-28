@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Calendar Settings — PodScheduler{% endblock %}
+{% block page_title %}Calendar Settings{% endblock %}
+{% block header_back %}
+<a href="{{ url_for('admin.dashboard') }}" class="hdr-back"><i class="bi bi-chevron-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="page-pad">
+
+  <div class="card mb-3" style="border:1px solid rgba(124,92,252,.3);">
+    <div class="card-body" style="padding:12px 16px;">
+      <div style="font-size:.85rem;color:rgba(255,255,255,.6);">
+        Anyone with this link can view every podcast in the pipeline (all
+        statuses) from any calendar app that supports "subscribe by URL" —
+        it does not require logging in. Treat it like a password: only
+        share it with people who should see the full pipeline, and
+        regenerate it if it ever leaks.
+      </div>
+      {% if settings.updated_at %}
+      <div style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:8px;">
+        Last regenerated {{ settings.updated_at.strftime('%b %d, %Y') }}{% if settings.updated_by %} by {{ settings.updated_by.username }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section-title" style="padding-left:0;">Subscription link</div>
+  <div class="card mb-2">
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label class="form-label">Web (https)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="form-control" readonly value="{{ https_url }}"
+                 id="httpsUrl" style="font-size:.78rem;">
+          <button type="button" class="btn btn-sm" style="background:var(--ps-surface2);color:var(--ps-text);flex-shrink:0;"
+                  onclick="navigator.clipboard.writeText(document.getElementById('httpsUrl').value)">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">webcal:// (opens directly in most calendar apps)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="form-control" readonly value="{{ webcal_url }}"
+                 id="webcalUrl" style="font-size:.78rem;">
+          <button type="button" class="btn btn-sm" style="background:var(--ps-surface2);color:var(--ps-text);flex-shrink:0;"
+                  onclick="navigator.clipboard.writeText(document.getElementById('webcalUrl').value)">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.calendar_settings') }}" novalidate
+        onsubmit="return confirm('Regenerate the link? The old link will stop working immediately.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-full mb-3"
+            style="background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);">
+      <i class="bi bi-arrow-repeat me-2"></i>Regenerate Link
+    </button>
+  </form>
+
+</div>
+{% endblock %}

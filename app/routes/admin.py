@@ -5,6 +5,7 @@ from ..extensions import db, mail
 from ..models import User, Role
 from ..models.role import PERMISSIONS
 from ..models.mail_settings import MailSettings
+from ..models.calendar_settings import CalendarSettings
 from ..forms import EditUserForm, RoleForm
 from ..decorators import admin_required
 
@@ -227,3 +228,27 @@ def _apply_mail_settings(settings):
     mail.init_app(app)
     # Reset the loader flag so other workers reload on their next request
     app._mail_settings_loaded = False
+
+
+# ── Calendar Settings ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/settings/calendar", methods=["GET", "POST"])
+@login_required
+@admin_required
+def calendar_settings():
+    settings = CalendarSettings.get_or_create()
+
+    if request.method == "POST":
+        settings.regenerate_token(current_user)
+        flash("Calendar subscription link regenerated. The old link no longer works.", "success")
+        return redirect(url_for("admin.calendar_settings"))
+
+    https_url = url_for("calendar.ics_feed", token=settings.feed_token, _external=True)
+    webcal_url = https_url.replace("https://", "webcal://").replace("http://", "webcal://")
+
+    return render_template(
+        "admin/calendar_settings.html",
+        settings=settings,
+        https_url=https_url,
+        webcal_url=webcal_url,
+    )
