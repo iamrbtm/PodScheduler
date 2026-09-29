@@ -20,6 +20,7 @@ class Podcast(db.Model):
     description = db.Column(db.Text)
     topic = db.Column(db.String(200))
     notes = db.Column(db.Text)
+    guest_prep_info = db.Column(db.Text)  # guest-visible; unlike `notes`, which is internal
     scheduled_date = db.Column(db.DateTime)  # release (go-live) date/time
     recording_date = db.Column(db.DateTime)  # when the episode is taped
     duration_minutes = db.Column(db.Integer, default=60)

@@ -8,6 +8,7 @@ from .email_template import EmailTemplate, MERGE_FIELDS
 from .mail_settings import MailSettings
 from .directory_submission import DirectorySubmission, SubmissionStatus
 from .calendar_settings import CalendarSettings
+from .guest_question import GuestQuestion
 
 __all__ = [
     "Role", "User",
@@ -19,4 +20,5 @@ __all__ = [
     "MailSettings",
     "DirectorySubmission", "SubmissionStatus",
     "CalendarSettings",
+    "GuestQuestion",
 ]
