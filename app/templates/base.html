@@ -540,7 +540,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-{% if current_user.is_authenticated %}
+{% if current_user.is_authenticated and not standalone %}
 <div class="app-shell">
   <!-- Top header -->
   <header class="app-header">

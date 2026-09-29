@@ -164,6 +164,76 @@ def check_guest_prep_form():
     check("producer detail page shows guest prep info", "Arrive 15 minutes early." in detail)
 
 
+@register
+def check_portal_pages():
+    alice, bob, carol, dave, erin = (make_guest(n) for n in ("Alice", "Bob", "Carol", "Dave", "Erin"))
+    show = make_show()
+    ep1 = make_episode(show_id=show.id, title=f"{TAG} Alpha", notes="SECRET-PRODUCTION-NOTES",
+                       guest_prep_info="Bring a headset.", description="Desc Alpha", topic="Topic Alpha")
+    ep2 = make_episode(title=f"{TAG} Beta", guest_prep_info="PREP-FOR-BETA", description="DESC-BETA-HIDDEN")
+    ep3 = make_episode(title=f"{TAG} Gamma-not-invited")
+    ep4 = make_episode(title=f"{TAG} Delta", status=PodcastStatus.CANCELLED)
+    a1 = add_slot(alice, ep1, "accepted", role=ParticipantRole.KEYNOTE_SPEAKER, message="Glad to have you!")
+    a2 = add_slot(alice, ep2, "pending")
+    a3 = add_slot(alice, ep3, "pending", invited=False)
+    a4 = add_slot(alice, ep4, "accepted")
+    b1 = add_slot(bob, ep1, "accepted")
+    c1 = add_slot(carol, ep1, "pending")
+    d1 = add_slot(dave, ep1, "declined")
+    b2 = add_slot(bob, ep2, "pending")
+    c = app.test_client()
+
+    r = c.get(f"/p/{alice.portal_token}")
+    body = r.get_data(as_text=True)
+    check("dashboard loads", r.status_code == 200, str(r.status_code))
+    check("dashboard lists invited episodes", all(t in body for t in ("Alpha", "Beta", "Delta")))
+    check("dashboard hides never-invited slot", "Gamma-not-invited" not in body)
+    check("unknown token is 404", c.get("/p/not-a-real-token").status_code == 404)
+    check("never-invited slot URL is 404", c.get(f"/p/{alice.portal_token}/episodes/{a3.id}").status_code == 404)
+    check("guest with no episodes gets 200 empty state",
+          "No invitations yet" in c.get(f"/p/{erin.portal_token}").get_data(as_text=True))
+    check("portal has no app shell (anonymous)", '<nav class="app-nav"' not in body)
+    check("portal has no app shell (logged-in producer)",
+          '<nav class="app-nav"' not in admin_client().get(f"/p/{alice.portal_token}").get_data(as_text=True))
+
+    acc = c.get(f"/p/{alice.portal_token}/episodes/{a1.id}").get_data(as_text=True)
+    check("accepted detail: prep info", "Bring a headset." in acc)
+    check("accepted detail: host message", "Glad to have you!" in acc)
+    check("accepted detail: recording date/time", "Thu, Oct 1, 2026" in acc and "2:30 PM" in acc)
+    check("accepted detail: release date/time", "Tue, Oct 20, 2026" in acc and "6:00 AM" in acc)
+    check("accepted detail: show name", show.title in acc)
+    check("accepted detail: confirmed co-guest listed", "Bob Verify" in acc)
+    check("accepted detail: pending/declined co-guests hidden", "Carol Verify" not in acc and "Dave Verify" not in acc)
+    check("accepted detail: never shows production notes", "SECRET-PRODUCTION-NOTES" not in acc)
+    check("accepted detail: never shows co-guest email", "@verify.invalid" not in acc)
+
+    pend = c.get(f"/p/{alice.portal_token}/episodes/{a2.id}").get_data(as_text=True)
+    check("pending detail offers accept and decline", 'value="accept"' in pend and 'value="decline"' in pend)
+    check("pending detail hides accepted-only info",
+          "PREP-FOR-BETA" not in pend and "DESC-BETA-HIDDEN" not in pend and "Bob Verify" not in pend)
+
+    canc = c.get(f"/p/{alice.portal_token}/episodes/{a4.id}").get_data(as_text=True)
+    check("cancelled detail shows badge and no actions", "Cancelled" in canc and 'name="action"' not in canc)
+
+    check("guest A token + guest B slot -> 404", c.get(f"/p/{alice.portal_token}/episodes/{b1.id}").status_code == 404)
+    check("guest B token + guest A slot -> 404", c.get(f"/p/{bob.portal_token}/episodes/{a1.id}").status_code == 404)
+    check("respond on another guest's slot -> 404",
+          c.post(f"/p/{bob.portal_token}/episodes/{a2.id}/respond", data={"action": "accept"}).status_code == 404)
+
+    r = c.post(f"/p/{alice.portal_token}/episodes/{a2.id}/respond", data={"action": "accept"})
+    db.session.expire_all()
+    check("accept records ACCEPTED and redirects", r.status_code == 302 and a2.invitation_status == InvitationStatus.ACCEPTED)
+    c.post(f"/p/{alice.portal_token}/episodes/{a2.id}/respond", data={"action": "decline"})
+    db.session.expire_all()
+    check("guest can change answer to DECLINED", a2.invitation_status == InvitationStatus.DECLINED)
+    c.post(f"/p/{alice.portal_token}/episodes/{a2.id}/respond", data={"action": "bogus"})
+    db.session.expire_all()
+    check("invalid action changes nothing", a2.invitation_status == InvitationStatus.DECLINED)
+    c.post(f"/p/{alice.portal_token}/episodes/{a4.id}/respond", data={"action": "decline"})
+    db.session.expire_all()
+    check("cancelled episode refuses responses", a4.invitation_status == InvitationStatus.ACCEPTED)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():

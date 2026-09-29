@@ -1,0 +1,40 @@
+{% extends "portal/base.html" %}
+{% from "portal/_macros.html" import when, pill %}
+{% block title %}Your episodes — PodScheduler{% endblock %}
+{% block content %}
+<div class="portal" data-view="{{ view }}">
+  <div class="portal-hello">
+    <h1>Hi {{ participant.name.split()[0] if participant.name else 'there' }} 👋</h1>
+    <p>Your episodes with us. Bookmark this page to come back any time.</p>
+  </div>
+
+  <aside class="portal-list">
+    <div class="section-title" style="padding-left:0;">Your episodes</div>
+    {% for s in slots %}
+    <a class="row-card{% if selected and s.id == selected.id %} selected{% endif %}"
+       href="{{ url_for('portal.episode', token=token, pp_id=s.id) }}">
+      <div class="rc-icon"><i class="bi bi-mic"></i></div>
+      <div class="rc-body">
+        <div class="rc-title">{{ s.podcast.title }}</div>
+        <div class="rc-sub">Recording: {{ when(s.podcast.recording_date) }}</div>
+      </div>
+      <div class="rc-end">{{ pill(s) }}</div>
+    </a>
+    {% else %}
+    <div style="text-align:center;padding:32px 8px;color:var(--ps-text-muted);">
+      <div style="font-size:2rem;">🎙️</div>
+      <div style="font-weight:700;margin-top:6px;">No invitations yet</div>
+      <div style="font-size:.85rem;">When you're invited to an episode it will show up here.</div>
+    </div>
+    {% endfor %}
+  </aside>
+
+  <section class="portal-detail">
+    {% if selected %}
+      {% include "portal/_detail.html" %}
+    {% else %}
+      <div style="text-align:center;padding:32px 8px;color:var(--ps-text-muted);">Select an episode to see its details.</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

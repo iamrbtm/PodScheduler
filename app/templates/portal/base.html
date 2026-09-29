@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set standalone = true %}
+{% block extra_head %}
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<style>
+  .portal { max-width: 520px; margin: 0 auto; padding: 20px 14px 40px; }
+  .portal-hello h1 { font-size: 1.25rem; font-weight: 800; margin: 0 0 4px; }
+  .portal-hello p { color: var(--ps-text-muted); font-size: .9rem; margin-bottom: 16px; }
+  .portal[data-view="list"] .portal-detail { display: none; }
+  .portal[data-view="detail"] .portal-list,
+  .portal[data-view="detail"] .portal-hello { display: none; }
+  .portal .btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .portal .btn-full { width: 100%; }
+  .portal textarea, .portal input { font-size: 16px; }
+  .portal-back { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; color: var(--ps-accent); text-decoration: none; font-weight: 600; }
+  .portal .row-card.selected { border-color: var(--ps-accent); background: var(--ps-accent-dim); }
+  .pill { font-size: .7rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .pill-pending  { background: rgba(var(--ps-yellow-rgb), .18); color: var(--ps-yellow); }
+  .pill-accepted { background: rgba(var(--ps-green-rgb), .16);  color: var(--ps-green); }
+  .pill-declined { background: rgba(var(--ps-red-rgb), .16);    color: var(--ps-red); }
+  .pill-cancelled { background: var(--ps-badge-cancelled-bg);   color: var(--ps-badge-cancelled-fg); }
+  .detail-row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--ps-border); font-size: .9rem; }
+  .detail-row:last-child { border-bottom: 0; }
+  .detail-row .k { width: 96px; flex-shrink: 0; color: var(--ps-text-muted); }
+  .detail-row .v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .portal-cover { width: 100%; max-height: 220px; object-fit: cover; border-radius: 14px; margin-bottom: 14px; }
+  .prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  @media (min-width: 992px) {
+    .portal { max-width: 1100px; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 24px; align-items: start; }
+    .portal[data-view] .portal-list, .portal[data-view] .portal-detail { display: block; }
+    .portal[data-view] .portal-hello { display: block; grid-column: 1 / -1; }
+    .portal-back { display: none; }
+  }
+
+  @media print {
+    html:root[data-bs-theme] {
+      --ps-bg: #fff; --ps-surface: #fff; --ps-surface2: #fff; --ps-text: #000;
+      --ps-text-muted: #444; --ps-border: #ccc; --ps-ink-rgb: 0,0,0;
+    }
+    body { background: #fff !important; color: #000 !important; }
+    .portal-list, .portal-hello, .portal-back, .no-print { display: none !important; }
+    .portal { display: block; max-width: none; padding: 0; }
+    .portal .portal-detail { display: block !important; }
+    .portal .card { break-inside: avoid; box-shadow: none; }
+  }
+</style>
+{% endblock %}

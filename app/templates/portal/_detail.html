@@ -1,0 +1,78 @@
+{% from "portal/_macros.html" import when, pill %}
+{% set pp = selected %}
+{% set ep = pp.podcast %}
+{% set cancelled = ep.status.value == 'cancelled' %}
+{% set accepted = pp.invitation_status.value == 'accepted' and not cancelled %}
+
+<a class="portal-back no-print" href="{{ url_for('portal.dashboard', token=token) }}"><i class="bi bi-chevron-left"></i> All episodes</a>
+
+{% if ep.show and ep.show.cover_image_url %}
+<img class="portal-cover" src="{{ ep.show.cover_image_url }}" alt="">
+{% endif %}
+
+<div class="d-flex align-items-start gap-2 mb-1">
+  <h2 style="font-size:1.3rem;font-weight:800;flex:1;margin:0;overflow-wrap:anywhere;">{{ ep.title }}</h2>
+  {{ pill(pp) }}
+</div>
+{% if ep.show %}<div style="color:var(--ps-text-muted);font-size:.85rem;margin-bottom:12px;">{{ ep.show.title }}</div>{% endif %}
+
+{% if cancelled %}
+<div class="card mb-3"><div class="card-body">This episode was cancelled.</div></div>
+{% else %}
+<div class="card mb-3"><div class="card-body">
+  <div class="detail-row"><div class="k">Recording</div><div class="v">{{ when(ep.recording_date) }}</div></div>
+  {% if accepted %}
+  <div class="detail-row"><div class="k">Release</div><div class="v">{{ when(ep.scheduled_date) }}</div></div>
+  {% endif %}
+  <div class="detail-row"><div class="k">Host</div><div class="v">{{ ep.host.username }}</div></div>
+  <div class="detail-row"><div class="k">Your role</div><div class="v">{{ pp.role_display }}</div></div>
+  {% if ep.topic %}<div class="detail-row"><div class="k">Topic</div><div class="v">{{ ep.topic }}</div></div>{% endif %}
+  {% if ep.duration_minutes %}<div class="detail-row"><div class="k">Length</div><div class="v">About {{ ep.duration_minutes }} minutes</div></div>{% endif %}
+</div></div>
+
+{% if pp.invitation_status.value == 'pending' %}
+<form method="post" action="{{ url_for('portal.respond', token=token, pp_id=pp.id) }}" class="d-flex flex-column gap-2 mb-3 no-print">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" name="action" value="accept" class="btn btn-accent btn-full">✓ Accept invitation</button>
+  <button type="submit" name="action" value="decline" class="btn btn-outline-secondary btn-full">Decline</button>
+</form>
+{% endif %}
+
+{% if accepted %}
+  {% if ep.description %}
+  <div class="section-title" style="padding-left:0;">About this episode</div>
+  <div class="card mb-3"><div class="card-body prewrap">{{ ep.description }}</div></div>
+  {% endif %}
+  {% if pp.message %}
+  <div class="section-title" style="padding-left:0;">A note from the host</div>
+  <div class="card mb-3"><div class="card-body prewrap">{{ pp.message }}</div></div>
+  {% endif %}
+  {% if ep.guest_prep_info %}
+  <div class="section-title" style="padding-left:0;">How to prepare</div>
+  <div class="card mb-3"><div class="card-body prewrap">{{ ep.guest_prep_info }}</div></div>
+  {% endif %}
+  {% if others %}
+  <div class="section-title" style="padding-left:0;">Also on this episode</div>
+  <div class="card mb-3"><div class="card-body">
+    {% for o in others %}
+    <div class="detail-row"><div class="v">{{ o.participant.name }}</div><div class="k" style="width:auto;">{{ o.role_display }}</div></div>
+    {% endfor %}
+  </div></div>
+  {% endif %}
+
+  <div class="d-flex flex-column gap-2 mb-3 no-print">
+    <button type="button" class="btn btn-outline-secondary btn-full" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+  </div>
+
+  <form method="post" action="{{ url_for('portal.respond', token=token, pp_id=pp.id) }}" class="mb-3 no-print">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" name="action" value="decline" class="btn btn-outline-danger btn-full">I can't make it — decline</button>
+  </form>
+{% elif pp.invitation_status.value == 'declined' %}
+  <form method="post" action="{{ url_for('portal.respond', token=token, pp_id=pp.id) }}" class="mb-3 no-print">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p style="color:var(--ps-text-muted);font-size:.9rem;">You declined this invitation. Changed your mind?</p>
+    <button type="submit" name="action" value="accept" class="btn btn-accent btn-full">✓ Accept invitation</button>
+  </form>
+{% endif %}
+{% endif %}

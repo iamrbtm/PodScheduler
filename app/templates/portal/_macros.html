@@ -1,0 +1,10 @@
+{% macro when(d) -%}
+{%- if d -%}{{ d.strftime('%a, %b') }} {{ d.day }}, {{ d.year }} · {{ d.strftime('%I:%M %p').lstrip('0') }}{%- else -%}TBD{%- endif -%}
+{%- endmacro %}
+
+{% macro pill(s) -%}
+{%- if s.podcast.status.value == 'cancelled' -%}<span class="pill pill-cancelled">Cancelled</span>
+{%- elif s.invitation_status.value == 'pending' -%}<span class="pill pill-pending">Needs response</span>
+{%- elif s.invitation_status.value == 'accepted' -%}<span class="pill pill-accepted">Confirmed</span>
+{%- else -%}<span class="pill pill-declined">Declined</span>{%- endif -%}
+{%- endmacro %}

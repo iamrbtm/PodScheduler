@@ -28,6 +28,7 @@ def create_app(config_name=None):
     from .routes.feed import feed_bp
     from .routes.main import main_bp
     from .routes.calendar import calendar_bp
+    from .routes.portal import portal_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -39,6 +40,7 @@ def create_app(config_name=None):
     app.register_blueprint(shows_bp, url_prefix="/admin/shows")
     app.register_blueprint(feed_bp)
     app.register_blueprint(calendar_bp)
+    app.register_blueprint(portal_bp, url_prefix="/p")
 
     _register_cli(app)
     _register_mail_loader(app)

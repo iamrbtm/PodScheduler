@@ -63,5 +63,16 @@ class PodcastParticipant(db.Model):
     def role_display(self):
         return "Keynote Speaker" if self.participant_role == ParticipantRole.KEYNOTE_SPEAKER else "Round Table Participant"
 
+    def other_confirmed_guests(self):
+        """Other guests on this episode who have accepted (never pending/declined), keynotes first."""
+        others = self.podcast.participant_slots.filter(
+            PodcastParticipant.id != self.id,
+            PodcastParticipant.invitation_status == InvitationStatus.ACCEPTED,
+        ).all()
+        return sorted(
+            others,
+            key=lambda s: (s.participant_role != ParticipantRole.KEYNOTE_SPEAKER, s.participant.name.lower()),
+        )
+
     def __repr__(self):
         return f"<PodcastParticipant podcast={self.podcast_id} participant={self.participant_id} role={self.participant_role}>"
