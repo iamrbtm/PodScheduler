@@ -23,5 +23,8 @@ To ACCEPT this invitation, visit:
 To DECLINE this invitation, visit:
 {{ decline_url }}
 
+To see all your episodes (bookmark this to come back any time):
+{{ portal_url }}
+
 ---
 Sent via PodScheduler

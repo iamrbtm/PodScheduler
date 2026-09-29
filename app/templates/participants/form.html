@@ -41,5 +41,22 @@
       <a href="{{ url_for('participants.index') }}" class="btn btn-outline-secondary btn-full">Cancel</a>
     </div>
   </form>
+
+  {% if participant %}
+  <div class="section-title" style="padding-left:0;margin-top:20px;">Guest dashboard link</div>
+  <div class="card mb-4">
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:.85rem;color:var(--ps-text-muted);">Private link to this guest's episode dashboard. Anyone with it can see their episodes.</div>
+      <input type="text" id="portalLink" class="form-control" value="{{ portal_url }}" readonly>
+      <button type="button" class="btn btn-outline-secondary btn-full" style="min-height:48px;"
+              onclick="navigator.clipboard.writeText(document.getElementById('portalLink').value);this.textContent='Copied ✓';">Copy link</button>
+      <form method="post" action="{{ url_for('participants.regenerate_portal_link', participant_id=participant.id) }}"
+            onsubmit="return confirm('Regenerate the link? The current link will stop working immediately.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-danger btn-full" style="min-height:48px;">Regenerate link</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

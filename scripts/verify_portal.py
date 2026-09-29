@@ -263,6 +263,36 @@ def check_invitation_redirect():
     check("cancelled episode: email link records nothing", pc.invitation_status == InvitationStatus.PENDING)
 
 
+@register
+def check_portal_link_management():
+    from app.email import _build_context, send_invitation_email
+    from app.models import MERGE_FIELDS
+    alice = make_guest("Alice")
+    ep = make_episode()
+    pp = add_slot(alice, ep, "pending")
+
+    check("portal_url is a merge field", "portal_url" in MERGE_FIELDS)
+    with app.test_request_context(base_url="http://localhost"):
+        check("email context carries the portal url",
+              _build_context(pp)["portal_url"] == f"http://localhost/p/{alice.portal_token}")
+        pp.email_template_id = None
+        with mail.record_messages() as out:
+            sent = send_invitation_email(pp)
+        check("fallback invitation email sends", sent and len(out) == 1)
+        link = f"/p/{alice.portal_token}"
+        check("fallback email (html + text) links to the portal", link in out[0].html and link in out[0].body)
+
+    c = admin_client()
+    check("edit page shows the portal link", f"/p/{alice.portal_token}" in c.get(f"/participants/{alice.id}/edit").get_data(as_text=True))
+    old = alice.portal_token
+    r = c.post(f"/participants/{alice.id}/regenerate-portal-link")
+    db.session.expire_all()
+    check("regenerate redirects and changes the token", r.status_code == 302 and alice.portal_token != old)
+    anon = app.test_client()
+    check("old portal URL now 404s", anon.get(f"/p/{old}").status_code == 404)
+    check("new portal URL works", anon.get(f"/p/{alice.portal_token}").status_code == 200)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():

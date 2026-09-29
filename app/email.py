@@ -24,6 +24,12 @@ def _build_context(podcast_participant):
         _external=True,
     )
 
+    portal_url = url_for(
+        "portal.dashboard",
+        token=participant.ensure_portal_token(),
+        _external=True,
+    )
+
     first_name = participant.name.split()[0] if participant.name else participant.name
 
     return {
@@ -42,6 +48,7 @@ def _build_context(podcast_participant):
         "personal_message": pp.message or "",
         "accept_url": accept_url,
         "decline_url": decline_url,
+        "portal_url": portal_url,
     }
 
 

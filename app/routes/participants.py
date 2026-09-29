@@ -51,7 +51,11 @@ def edit(participant_id):
         db.session.commit()
         flash(f"Participant '{participant.name}' updated.", "success")
         return redirect(url_for("participants.index"))
-    return render_template("participants/form.html", form=form, participant=participant)
+    if participant.portal_token is None:
+        participant.ensure_portal_token()
+        db.session.commit()
+    portal_url = url_for("portal.dashboard", token=participant.portal_token, _external=True)
+    return render_template("participants/form.html", form=form, participant=participant, portal_url=portal_url)
 
 
 @participants_bp.route("/<int:participant_id>/delete", methods=["POST"])
@@ -64,3 +68,14 @@ def delete(participant_id):
     db.session.commit()
     flash(f"Participant '{name}' deleted.", "success")
     return redirect(url_for("participants.index"))
+
+
+@participants_bp.route("/<int:participant_id>/regenerate-portal-link", methods=["POST"])
+@login_required
+@permission_required("manage_participants")
+def regenerate_portal_link(participant_id):
+    participant = Participant.query.get_or_404(participant_id)
+    participant.regenerate_portal_token()
+    db.session.commit()
+    flash("Portal link regenerated. The old link no longer works — send the new one to the guest.", "success")
+    return redirect(url_for("participants.edit", participant_id=participant.id))

@@ -20,6 +20,7 @@ MERGE_FIELDS = {
     "personal_message": "Optional personal message",
     "accept_url": "Invitation accept link",
     "decline_url": "Invitation decline link",
+    "portal_url": "Guest's private dashboard link (all their episodes)",
 }
 
 

@@ -99,6 +99,7 @@ def preview(template_id):
         "personal_message": "We'd love to have you share your expertise!",
         "accept_url": "#accept",
         "decline_url": "#decline",
+        "portal_url": "#portal",
     }
     subject, html, _ = tmpl.render(sample)
     return render_template(
