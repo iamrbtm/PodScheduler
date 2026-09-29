@@ -73,11 +73,26 @@ def send_invitation_email(podcast_participant):
     return _send(pp.participant.email, subject, html_body, text_body)
 
 
-def _send(to_email, subject, html_body, text_body):
-    msg = Message(subject=subject, recipients=[to_email], html=html_body, body=text_body)
+def _send(to_email, subject, html_body, text_body, reply_to=None, attachments=None):
+    msg = Message(subject=subject, recipients=[to_email], html=html_body, body=text_body, reply_to=reply_to)
+    for filename, content_type, data in attachments or []:
+        msg.attach(filename, content_type, data)
     try:
         mail.send(msg)
         return True
     except Exception as e:
         current_app.logger.error(f"Failed to send email to {to_email}: {e}")
         return False
+
+
+def send_guest_question_email(question):
+    pp = question.podcast_participant
+    guest = pp.participant
+    episode = pp.podcast
+    subject = f"Question from {guest.name} about {episode.title}"
+    text = (
+        f'{guest.name} <{guest.email}> asked about "{episode.title}":\n\n'
+        f"{question.question}\n\n"
+        "— Reply to this email to answer them directly."
+    )
+    return _send(episode.host.email, subject, None, text, reply_to=guest.email)

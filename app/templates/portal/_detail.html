@@ -64,6 +64,16 @@
     <button type="button" class="btn btn-outline-secondary btn-full" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
   </div>
 
+  <div class="card mb-3 no-print"><div class="card-body">
+    <form method="post" action="{{ url_for('portal.question', token=token, pp_id=pp.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="guestQuestion">Ask the host a question</label>
+      <textarea id="guestQuestion" name="question" class="form-control mb-2" rows="3" maxlength="2000" required
+                placeholder="Anything you'd like to know before the recording…"></textarea>
+      <button type="submit" class="btn btn-accent btn-full"><i class="bi bi-send"></i> Send question</button>
+    </form>
+  </div></div>
+
   <form method="post" action="{{ url_for('portal.respond', token=token, pp_id=pp.id) }}" class="mb-3 no-print">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" name="action" value="decline" class="btn btn-outline-danger btn-full">I can't make it — decline</button>

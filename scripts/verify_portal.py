@@ -293,6 +293,50 @@ def check_portal_link_management():
     check("new portal URL works", anon.get(f"/p/{alice.portal_token}").status_code == 200)
 
 
+@register
+def check_questions():
+    from app.models import GuestQuestion
+    alice, bob = make_guest("Alice"), make_guest("Bob")
+    ep, ep_cancelled = make_episode(), make_episode(status=PodcastStatus.CANCELLED)
+    ok = add_slot(alice, ep, "accepted")
+    pending = add_slot(bob, ep, "pending")
+    cancelled = add_slot(alice, ep_cancelled, "accepted")
+    c = app.test_client()
+    url = lambda g, s: f"/p/{g.portal_token}/episodes/{s.id}/question"
+
+    with mail.record_messages() as out:
+        r = c.post(url(alice, ok), data={"question": "What mic should I use? <b>&</b>"})
+    db.session.expire_all()
+    q = GuestQuestion.query.filter_by(podcast_participant_id=ok.id).first()
+    check("question saved and redirects", r.status_code == 302 and q is not None)
+    check("question marked emailed", q is not None and q.email_sent is True)
+    check("host emailed with guest as reply-to",
+          len(out) == 1 and out[0].recipients == [admin().email] and out[0].reply_to == alice.email
+          and "What mic should I use?" in out[0].body, str([(m.recipients, m.reply_to) for m in out]))
+
+    n0 = GuestQuestion.query.count()
+    c.post(url(alice, ok), data={"question": "   "})
+    c.post(url(alice, ok), data={"question": "x" * 2001})
+    c.post(url(bob, pending), data={"question": "not accepted yet"})
+    c.post(url(alice, cancelled), data={"question": "cancelled episode"})
+    check("empty / 2001-char / pending / cancelled questions are rejected", GuestQuestion.query.count() == n0)
+    check("question on another guest's slot -> 404", c.post(url(bob, ok), data={"question": "hi"}).status_code == 404)
+
+    real_send = mail.send
+    def boom(msg):
+        raise RuntimeError("smtp down")
+    mail.send = boom
+    try:
+        r = c.post(url(alice, ok), data={"question": "second question"}, follow_redirects=True)
+    finally:
+        mail.send = real_send
+    db.session.expire_all()
+    q2 = GuestQuestion.query.filter_by(podcast_participant_id=ok.id, question="second question").first()
+    check("mail failure: question still saved, email_sent False", q2 is not None and q2.email_sent is False)
+    # (no apostrophes in the needle: flashed text is HTML-escaped, so "couldn't" renders as "couldn&#39;t")
+    check("mail failure: guest told plainly", "email it to the host right now" in r.get_data(as_text=True))
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():
