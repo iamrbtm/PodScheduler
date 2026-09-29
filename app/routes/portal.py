@@ -2,7 +2,7 @@ from datetime import datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from ..email import send_guest_question_email
+from ..email import send_episode_pdf_email, send_guest_question_email
 from ..extensions import db
 from ..models import GuestQuestion, InvitationStatus, Participant, PodcastParticipant, PodcastStatus
 
@@ -116,4 +116,18 @@ def question(token, pp_id):
         else:
             flash("We saved your question but couldn't email it to the host right now. "
                   "Please try again later or contact them directly.", "warning")
+    return redirect(url_for("portal.episode", token=token, pp_id=pp.id))
+
+
+@portal_bp.route("/<token>/episodes/<int:pp_id>/email-pdf", methods=["POST"])
+def email_pdf(token, pp_id):
+    participant = _participant_or_404(token)
+    pp = _slot_or_404(participant, pp_id)
+
+    if pp.podcast.status == PodcastStatus.CANCELLED or pp.invitation_status != InvitationStatus.ACCEPTED:
+        flash("The PDF is available once you've accepted an active episode.", "warning")
+    elif send_episode_pdf_email(pp):
+        flash(f"We emailed the details to {participant.email}.", "success")
+    else:
+        flash("We couldn't send the email right now. You can still use Print on this page.", "warning")
     return redirect(url_for("portal.episode", token=token, pp_id=pp.id))

@@ -62,6 +62,10 @@
 
   <div class="d-flex flex-column gap-2 mb-3 no-print">
     <button type="button" class="btn btn-outline-secondary btn-full" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    <form method="post" action="{{ url_for('portal.email_pdf', token=token, pp_id=pp.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-secondary btn-full"><i class="bi bi-envelope"></i> Email me a PDF</button>
+    </form>
   </div>
 
   <div class="card mb-3 no-print"><div class="card-body">

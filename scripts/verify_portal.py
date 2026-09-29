@@ -337,6 +337,46 @@ def check_questions():
     check("mail failure: guest told plainly", "email it to the host right now" in r.get_data(as_text=True))
 
 
+@register
+def check_pdf():
+    from reportlab import rl_config
+    rl_config.pageCompression = 0  # keep PDF text greppable for this check
+    from app.pdf import build_episode_pdf
+    alice, bob, carol = make_guest("Alice"), make_guest("Bob"), make_guest("Carol")
+    show = make_show()
+    ep = make_episode(show_id=show.id, notes="SECRET-PRODUCTION-NOTES",
+                      guest_prep_info="Bring a headset & <b>arrive</b> early </b> R&D <3",
+                      description="Desc <i>unbalanced")
+    pp = add_slot(alice, ep, "accepted", role=ParticipantRole.KEYNOTE_SPEAKER, message="Hi & welcome")
+    add_slot(bob, ep, "accepted")
+    add_slot(carol, ep, "pending")
+
+    data = build_episode_pdf(pp)
+    check("PDF bytes are a PDF", data[:5] == b"%PDF-")
+    check("PDF includes prep info and confirmed co-guest", b"headset" in data and b"Bob Verify" in data)
+    check("PDF excludes production notes and pending co-guests",
+          b"SECRET-PRODUCTION-NOTES" not in data and b"Carol Verify" not in data)
+
+    ep_cancelled = make_episode(status=PodcastStatus.CANCELLED)
+    cancelled = add_slot(alice, ep_cancelled, "accepted")
+    pending = add_slot(bob, ep_cancelled, "pending")
+    c = app.test_client()
+    url = lambda g, s: f"/p/{g.portal_token}/episodes/{s.id}/email-pdf"
+
+    with mail.record_messages() as out:
+        r = c.post(url(alice, pp))
+    check("email-pdf redirects", r.status_code == 302, str(r.status_code))
+    check("PDF emailed only to the guest's own address", len(out) == 1 and out[0].recipients == [alice.email], str([m.recipients for m in out]))
+    att = out[0].attachments[0] if out and out[0].attachments else None
+    check("PDF attached as a .pdf", att is not None and att.filename.endswith(".pdf") and att.data[:5] == b"%PDF-")
+
+    with mail.record_messages() as out:
+        c.post(url(alice, cancelled))
+        c.post(url(bob, pending))
+    check("no PDF for cancelled or unaccepted episodes", len(out) == 0)
+    check("PDF on another guest's slot -> 404", c.post(url(bob, pp)).status_code == 404)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():

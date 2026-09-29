@@ -1,6 +1,8 @@
 from flask import current_app, render_template, url_for
 from flask_mail import Message
+from werkzeug.utils import secure_filename
 from .extensions import mail
+from .pdf import build_episode_pdf
 
 
 def _build_context(podcast_participant):
@@ -96,3 +98,19 @@ def send_guest_question_email(question):
         "— Reply to this email to answer them directly."
     )
     return _send(episode.host.email, subject, None, text, reply_to=guest.email)
+
+
+def send_episode_pdf_email(pp):
+    """Email the episode details PDF to the participant's own address only."""
+    episode = pp.podcast
+    filename = f"{secure_filename(episode.title) or 'episode'}.pdf"
+    subject = f"Details for {episode.title}"
+    text = (
+        f"Hi {pp.participant.name},\n\n"
+        f'Attached are your details for "{episode.title}".\n\n'
+        "Sent via PodScheduler"
+    )
+    return _send(
+        pp.participant.email, subject, None, text,
+        attachments=[(filename, "application/pdf", build_episode_pdf(pp))],
+    )
