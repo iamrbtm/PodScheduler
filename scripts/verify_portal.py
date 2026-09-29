@@ -234,6 +234,35 @@ def check_portal_pages():
     check("cancelled episode refuses responses", a4.invitation_status == InvitationStatus.ACCEPTED)
 
 
+@register
+def check_invitation_redirect():
+    alice = make_guest("Alice")
+    ep = make_episode()
+    ep_cancelled = make_episode(status=PodcastStatus.CANCELLED)
+    pp = add_slot(alice, ep, "pending")
+    pc = add_slot(alice, ep_cancelled, "pending")
+    c = app.test_client()
+
+    r = c.get(f"/invitations/{pp.invitation_token}/accept")
+    dest = f"/p/{alice.portal_token}/episodes/{pp.id}"
+    check("email accept link redirects into the portal", r.status_code == 302 and r.headers["Location"].endswith(dest), r.headers.get("Location", ""))
+    db.session.expire_all()
+    check("email accept link records ACCEPTED", pp.invitation_status == InvitationStatus.ACCEPTED)
+
+    r = c.get(f"/invitations/{pp.invitation_token}/decline")
+    db.session.expire_all()
+    check("second email link can't silently flip a recorded answer",
+          pp.invitation_status == InvitationStatus.ACCEPTED and r.status_code == 302 and r.headers["Location"].endswith(dest))
+
+    r = c.get(f"/invitations/{pp.invitation_token}/bogus")
+    check("invalid action still redirects to main.index", r.status_code == 302 and r.headers["Location"].endswith("/"), r.headers.get("Location", ""))
+    check("unknown invitation token is 404", c.get("/invitations/nope/accept").status_code == 404)
+
+    c.get(f"/invitations/{pc.invitation_token}/accept")
+    db.session.expire_all()
+    check("cancelled episode: email link records nothing", pc.invitation_status == InvitationStatus.PENDING)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():
