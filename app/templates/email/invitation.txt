@@ -4,7 +4,7 @@ Hi {{ guest.name }},
 
 PODCAST: {{ podcast.title }}
 {% if podcast.topic %}TOPIC: {{ podcast.topic }}{% endif %}
-{% if podcast.scheduled_date %}DATE: {{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}{% endif %}
+{% if podcast.recording_date %}DATE: {{ podcast.recording_date.strftime('%B %d, %Y at %I:%M %p') }}{% endif %}
 DURATION: ~{{ podcast.duration_minutes }} minutes
 
 {% if personal_message %}

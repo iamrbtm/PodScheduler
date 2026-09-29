@@ -39,10 +39,10 @@
       <strong style="font-size:1.1rem;">{{ podcast.title }}</strong>
       {% if podcast.topic %}<p style="color:#6c757d; margin:4px 0 12px;">{{ podcast.topic }}</p>{% endif %}
 
-      {% if podcast.scheduled_date %}
+      {% if podcast.recording_date %}
       <div class="detail-row">
         <span class="detail-label">📅 Date:</span>
-        <span>{{ podcast.scheduled_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+        <span>{{ podcast.recording_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
       </div>
       {% endif %}
       <div class="detail-row">

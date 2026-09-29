@@ -60,13 +60,9 @@ def send_invitation_email(podcast_participant):
     # Fall back to the built-in Jinja2 templates
     subject = f"Podcast Invitation: {pp.podcast.title}"
     html_body = render_template("email/invitation.html", **context, pg=pp, podcast=pp.podcast,
-                                guest=pp.participant, host=pp.podcast.host,
-                                accept_url=context["accept_url"], decline_url=context["decline_url"],
-                                personal_message=pp.message)
+                                guest=pp.participant, host=pp.podcast.host)
     text_body = render_template("email/invitation.txt", **context, pg=pp, podcast=pp.podcast,
-                                guest=pp.participant, host=pp.podcast.host,
-                                accept_url=context["accept_url"], decline_url=context["decline_url"],
-                                personal_message=pp.message)
+                                guest=pp.participant, host=pp.podcast.host)
     return _send(pp.participant.email, subject, html_body, text_body)
 
 
