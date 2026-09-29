@@ -20,6 +20,7 @@ A **mobile-first podcast scheduling platform** built for a small team. Producers
 | Object storage | MinIO (S3-compatible, self-hosted) via `boto3` — episode audio + show cover art |
 | Reverse proxy | Caddy — automatic HTTPS on `PUBLIC_DOMAIN`, routes `/media/*` to MinIO |
 | Audio metadata | `mutagen` — reads episode duration on upload |
+| PDF | `reportlab` — emailed episode-details PDF for guests (`app/pdf.py`) |
 | Image validation | `Pillow` — validates cover art dimensions/format on upload |
 | Package manager | **uv** — `pyproject.toml` + `uv.lock`, `[tool.uv] package = false` |
 | Container | Docker Compose (`web` + `db` + `minio` + `caddy`) |
@@ -89,7 +90,8 @@ PodScheduler/
 │   ├── config.py            # DevelopmentConfig / ProductionConfig / TestingConfig
 │   ├── extensions.py        # db, login_manager, mail, migrate singletons
 │   ├── decorators.py        # @permission_required(perm)
-│   ├── email.py             # send_invitation_email(podcast_participant)
+│   ├── email.py             # send_invitation_email(podcast_participant), guest question + PDF emails
+│   ├── pdf.py               # build_episode_pdf(pp) via reportlab
 │   ├── seed.py              # run_seed() — roles + admin user
 │   ├── storage.py           # upload_file/upload_audio/upload_cover_image/delete_object (MinIO via boto3)
 │   ├── audio.py             # get_duration_seconds() via mutagen
@@ -104,6 +106,7 @@ PodScheduler/
 │   │   ├── podcast_participant.py  # PodcastParticipant join table + enums
 │   │   ├── directory_submission.py # DirectorySubmission, SubmissionStatus enum
 │   │   ├── mail_settings.py        # MailSettings — singleton SMTP config
+│   │   ├── guest_question.py       # GuestQuestion — questions guests send to the host
 │   │   ├── calendar_settings.py    # CalendarSettings — singleton, holds the ICS feed_token
 │   │   └── email_template.py       # EmailTemplate, MERGE_FIELDS, render_blocks_*
 │   ├── forms/
@@ -123,7 +126,8 @@ PodScheduler/
 │   │   ├── email_templates.py  # /admin/email-templates/*
 │   │   ├── shows.py         # /admin/shows/* (CRUD + directory checklist)
 │   │   ├── feed.py          # /feed/<slug>.xml — public RSS feed, no login
-│   │   └── calendar.py      # /calendar (page + events.json), /calendar/feed/<token>.ics (public)
+│   │   ├── calendar.py      # /calendar (page + events.json), /calendar/feed/<token>.ics (public)
+│   │   └── portal.py        # /p/<token>/* — public guest dashboard (episodes, accept/decline, questions, PDF)
 │   └── templates/
 │       ├── base.html        # App shell: fixed header + bottom nav
 │       ├── main/
@@ -131,6 +135,7 @@ PodScheduler/
 │       ├── podcasts/
 │       ├── participants/
 │       ├── calendar/        # index.html — FullCalendar list/grid page
+│       ├── portal/          # base.html, page.html, _detail.html, _macros.html — standalone guest UI
 │       ├── admin/
 │       │   ├── email_templates/  # builder.html, index.html, preview.html
 │       │   ├── shows/            # index.html, form.html, directories.html
@@ -138,6 +143,7 @@ PodScheduler/
 │       │   └── ...
 │       └── invitations/     # Standalone pages (no app shell, no login)
 ├── migrations/              # Alembic migration files
+├── scripts/verify_portal.py # verification harness for the participant portal (no test suite)
 ├── Dockerfile
 ├── docker-compose.yml       # web, db, minio, caddy
 ├── Caddyfile                # reverse proxy: /media/* → minio, everything else → web
@@ -165,13 +171,14 @@ PodScheduler/
 - Property: `is_feed_ready` → True once title/author_name/owner_email/cover_image_url are all set — required before an episode on this show can be distributed
 
 ### Podcast  *(= one episode)*
-- `id`, `title`, `topic`, `description`, `notes`, `status` (PodcastStatus enum), `recording_date` (when it's taped), `scheduled_date` (release / go-live — label is "Release Date & Time"), `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
+- `id`, `title`, `topic`, `description`, `notes` (internal), `guest_prep_info` (guest-visible prep text), `status` (PodcastStatus enum), `recording_date` (when it's taped), `scheduled_date` (release / go-live — label is "Release Date & Time"), `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
 - Audio fields: `audio_object_key`, `audio_url`, `audio_duration_seconds`, `audio_file_size`, `episode_number`, `season_number`, `published_at`
 - `PodcastStatus`: `draft`, `scheduled`, `recorded`, `ready_to_distribute`, `published`, `cancelled`
 - Properties: `keynote_slots`, `roundtable_slots`, `participant_count`, `has_audio`, `audio_duration_display`
 
 ### Participant
 - `id`, `name`, `email`, `phone`, `company`, `bio`, `created_at`, `created_by_id` (FK User)
+- `portal_token` (unique, `token_urlsafe(32)`) — the guest's private dashboard link; `ensure_portal_token()`, `regenerate_portal_token()`
 - Relationship: `episode_slots` → list of `PodcastParticipant` rows
 - The **same person** can be keynote on one episode and roundtable on another
 
@@ -184,6 +191,9 @@ PodScheduler/
 - `InvitationStatus`: `pending`, `accepted`, `declined`
 - Methods: `generate_token()`, `mark_invited()`, `accept()`, `decline()`
 - Property: `role_display` → human-readable string
+
+### GuestQuestion
+- `id`, `podcast_participant_id` (FK, cascade), `question`, `created_at`, `email_sent` (False if the host email failed)
 
 ### EmailTemplate
 - `id`, `name`, `subject`, `blocks_json` (JSON array), `html_body`, `text_body`, `created_by_id` (FK), `created_at`, `updated_at`
@@ -232,12 +242,24 @@ Use `@permission_required("perm_name")` decorator on routes. Check in templates 
 2. `podcasts.invite_participant` creates a `PodcastParticipant` row and calls `send_invitation_email(pp)`
 3. `email.py::send_invitation_email` builds a context dict from the `PodcastParticipant`, renders the chosen `EmailTemplate` (or falls back to Jinja2 templates), and sends via Flask-Mail
 4. Participant clicks the link → `/invitations/<token>/accept` or `/invitations/<token>/decline`
-5. `invitations.py` looks up the token, updates `invitation_status`, shows a standalone confirmation page (no login required)
+5. `invitations.py` looks up the token, records the response (one click, on open) and **redirects** to `/p/<portal_token>/episodes/<pp_id>` (the participant portal, below)
 
 **Merge fields** available in templates:
 `participant_name`, `participant_first_name`, `participant_email`, `participant_role`,
 `episode_title`, `episode_topic`, `episode_date`/`episode_time` (= recording), `release_date`/`release_time`, `episode_duration`,
-`host_name`, `personal_message`, `accept_url`, `decline_url`
+`host_name`, `personal_message`, `accept_url`, `decline_url`, `portal_url`
+
+---
+
+## Participant portal
+
+Guests get a no-login dashboard at `/p/<portal_token>` (`app/routes/portal.py`, `app/templates/portal/`): every episode they were invited to, with Accept/Decline (and change-answer), episode details, Print, an emailed PDF, and a question form to the host.
+
+- **Authorization is the token.** `Participant.portal_token` is per person (like the ICS feed token). Regenerate it from the participant edit page to revoke — the old URL 404s immediately. Every query is scoped to the token's owner; another guest's slot, or one a producer added but never sent (`invited_at IS NULL`), is a 404.
+- **Visibility:** pending/declined guests see title, topic, host, recording date, role only. Description, release date, host message, `guest_prep_info` and other *accepted* guests' names appear only after accepting. `Podcast.notes` is never shown, emailed or put in the PDF. Cancelled episodes are listed but refuse every action.
+- **Questions** are saved (`guest_questions`) then emailed to the host with `Reply-To` = the guest; if mail fails the row stays with `email_sent=False` and the guest is told. No in-app thread or producer inbox. The **PDF** (`app/pdf.py`) is only ever emailed to the participant's own address.
+- **Layout:** phone = list screen then detail screen; wide (≥992px) = split view. Pages set `{% set standalone = true %}` (in `portal/base.html`) so `base.html` skips the app shell even for a logged-in producer.
+- **Known limits:** Accept/Decline in emails are one-click GETs, so an email link scanner can respond for a guest (they can change it in the portal). Times are naive wall-clock with no timezone shown.
 
 ---
 
@@ -510,11 +532,15 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 
 ---
 
+- `scripts/verify_portal.py` must stop the first request from re-reading the DB's real SMTP settings (`_load_mail_settings` calls `mail.init_app` again) and must set `app.extensions['mail'].suppress = True` — setting `app.config['MAIL_SUPPRESS_SEND']` after `create_app()` does nothing because Flask-Mail reads it at `init_app` time. Ad-hoc scripts that send mail have attempted real SMTP because of this.
+
 ## What this project does NOT have (don't add without asking)
 
-- No tests (yet)
+- No test suite (only `scripts/verify_portal.py`, run with `docker compose exec -T web uv run python scripts/verify_portal.py`)
 - No API / JSON endpoints, except `email_templates.save` and `calendar.events_json`
-  (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget)
+  (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget).
+  The guest portal adds public HTML form POSTs under `/p/<token>/…` (respond, question, email-pdf) — not JSON.
+- No polls, question threads or producer question inbox in the portal (deliberate v1 scope — see `docs/superpowers/specs/2026-09-29-participant-portal-design.md`)
 - No WebSockets or real-time updates
 - No file uploads beyond episode audio (`storage.upload_audio`) and show cover art
   (`storage.upload_cover_image`) — both go to MinIO. Don't add general-purpose file upload without asking.
