@@ -145,6 +145,25 @@ def check_models():
     check("no participant lacks a portal_token", nulls == 0)
 
 
+@register
+def check_guest_prep_form():
+    show = make_show()
+    ep = make_episode(show_id=show.id, notes="internal only")
+    c = admin_client()
+    page = c.get(f"/podcasts/{ep.id}/edit").get_data(as_text=True)
+    check("episode form has the guest prep field", 'name="guest_prep_info"' in page)
+    r = c.post(f"/podcasts/{ep.id}/edit", data={
+        "title": ep.title, "host_id": ep.host_id, "status": "scheduled", "show_id": show.id,
+        "duration_minutes": 45, "notes": "internal only",
+        "guest_prep_info": "Arrive 15 minutes early.",
+    })
+    check("saving the form redirects", r.status_code == 302, str(r.status_code))
+    db.session.expire_all()
+    check("guest_prep_info saved", db.session.get(Podcast, ep.id).guest_prep_info == "Arrive 15 minutes early.")
+    detail = c.get(f"/podcasts/{ep.id}").get_data(as_text=True)
+    check("producer detail page shows guest prep info", "Arrive 15 minutes early." in detail)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():

@@ -56,6 +56,11 @@
       <div class="divider mt-2"></div>
       <p style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.4);white-space:pre-wrap;margin:0;">{{ podcast.notes }}</p>
       {% endif %}
+      {% if podcast.guest_prep_info %}
+      <div class="divider mt-2"></div>
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(var(--ps-ink-rgb),.4);margin-top:8px;">Guest prep info (shown to guests)</div>
+      <p style="font-size:.8rem;color:rgba(var(--ps-ink-rgb),.5);white-space:pre-wrap;margin:0;">{{ podcast.guest_prep_info }}</p>
+      {% endif %}
     </div>
   </div>
 

@@ -50,6 +50,7 @@ def create():
             topic=form.topic.data,
             description=form.description.data,
             notes=form.notes.data,
+            guest_prep_info=form.guest_prep_info.data,
             recording_date=form.recording_date.data,
             scheduled_date=form.scheduled_date.data,
             duration_minutes=form.duration_minutes.data,
@@ -108,6 +109,7 @@ def edit(podcast_id):
         podcast.topic = form.topic.data
         podcast.description = form.description.data
         podcast.notes = form.notes.data
+        podcast.guest_prep_info = form.guest_prep_info.data
         podcast.recording_date = form.recording_date.data
         podcast.scheduled_date = form.scheduled_date.data
         podcast.duration_minutes = form.duration_minutes.data

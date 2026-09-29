@@ -68,7 +68,16 @@
     <div class="section-title" style="padding-left:0;">Production Notes</div>
     <div class="card mb-4">
       <div class="card-body">
-        {{ form.notes(class="form-control", rows=4, placeholder="Internal notes, talking points, prep materials...") }}
+        {{ form.notes(class="form-control", rows=4, placeholder="Internal notes and talking points. Guests never see this.") }}
+      </div>
+    </div>
+
+    <div class="section-title" style="padding-left:0;">Guest Preparation Info</div>
+    <div class="card mb-4">
+      <div class="card-body">
+        {{ form.guest_prep_info(class="form-control" + (" is-invalid" if form.guest_prep_info.errors else ""), rows=4, placeholder="What guests should know or bring — shown on their dashboard.") }}
+        {% for e in form.guest_prep_info.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        <div class="form-text">Visible to invited guests who accept. Production Notes above stay internal.</div>
       </div>
     </div>
 
