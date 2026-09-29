@@ -6,7 +6,7 @@
 
 <a class="portal-back no-print" href="{{ url_for('portal.dashboard', token=token) }}"><i class="bi bi-chevron-left"></i> All episodes</a>
 
-{% if ep.show and ep.show.cover_image_url %}
+{% if accepted and ep.show and ep.show.cover_image_url %}
 <img class="portal-cover" src="{{ ep.show.cover_image_url }}" alt="">
 {% endif %}
 
@@ -14,7 +14,7 @@
   <h2 style="font-size:1.3rem;font-weight:800;flex:1;margin:0;overflow-wrap:anywhere;">{{ ep.title }}</h2>
   {{ pill(pp) }}
 </div>
-{% if ep.show %}<div style="color:var(--ps-text-muted);font-size:.85rem;margin-bottom:12px;">{{ ep.show.title }}</div>{% endif %}
+{% if accepted and ep.show %}<div style="color:var(--ps-text-muted);font-size:.85rem;margin-bottom:12px;">{{ ep.show.title }}</div>{% endif %}
 
 {% if cancelled %}
 <div class="card mb-3"><div class="card-body">This episode was cancelled.</div></div>

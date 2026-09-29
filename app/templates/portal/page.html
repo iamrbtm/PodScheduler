@@ -4,7 +4,7 @@
 {% block content %}
 <div class="portal" data-view="{{ view }}">
   <div class="portal-hello">
-    <h1>Hi {{ participant.name.split()[0] if participant.name else 'there' }} 👋</h1>
+    <h1>Hi {{ (participant.name.split() or ['there'])[0] }} 👋</h1>
     <p>Your episodes with us. Bookmark this page to come back any time.</p>
   </div>
 

@@ -32,7 +32,7 @@ def _build_context(podcast_participant):
         _external=True,
     )
 
-    first_name = participant.name.split()[0] if participant.name else participant.name
+    first_name = participant.name.split()[0] if participant.name and participant.name.split() else participant.name
 
     return {
         "participant_name": participant.name,

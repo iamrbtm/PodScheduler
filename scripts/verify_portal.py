@@ -377,6 +377,40 @@ def check_pdf():
     check("PDF on another guest's slot -> 404", c.post(url(bob, pp)).status_code == 404)
 
 
+@register
+def check_review_fixes():
+    from app.email import _build_context
+    ws = Participant(name="   ", email="blank@verify.invalid", created_by_id=admin().id)
+    db.session.add(ws)
+    db.session.commit()
+    ep0 = make_episode()
+    add_slot(ws, ep0, "pending")
+    r = app.test_client().get(f"/p/{ws.portal_token}")
+    check("whitespace-only guest name: dashboard still loads", r.status_code == 200, str(r.status_code))
+    with app.test_request_context(base_url="http://localhost"):
+        try:
+            _build_context(ws.episode_slots.first())
+            ok = True
+        except Exception as e:
+            ok = False
+        check("whitespace-only guest name: email context still builds", ok)
+
+    alice = make_guest("Alice")
+    show = make_show()
+    ep = make_episode(show_id=show.id)
+    ep_declined = make_episode(show_id=show.id)
+    pend = add_slot(alice, ep, "pending")
+    decl = add_slot(alice, ep_declined, "declined")
+    c = app.test_client()
+    for label, slot in (("pending", pend), ("declined", decl)):
+        body = c.get(f"/p/{alice.portal_token}/episodes/{slot.id}").get_data(as_text=True)
+        check(f"{label} detail hides show name and cover art",
+              show.title not in body.split('class="portal-detail"', 1)[1] and "verify-cover.jpg" not in body)
+    acc = add_slot(alice, make_episode(show_id=show.id), "accepted")
+    body = c.get(f"/p/{alice.portal_token}/episodes/{acc.id}").get_data(as_text=True)
+    check("accepted detail still shows show name and cover art", show.title in body and "verify-cover.jpg" in body)
+
+
 # ── runner ────────────────────────────────────────────────────────────────────
 
 def main():
