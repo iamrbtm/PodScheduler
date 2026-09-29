@@ -27,8 +27,16 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
+          <i class="bi bi-mic" style="color:rgba(var(--ps-ink-rgb),.4);width:16px;"></i>
+          <span style="color:rgba(var(--ps-ink-rgb),.5);">Recording</span>
+          <span class="ms-auto fw-semibold">
+            {% if podcast.recording_date %}{{ podcast.recording_date.strftime('%b %d, %Y · %I:%M %p') }}
+            {% else %}<span style="color:rgba(var(--ps-ink-rgb),.35);">Not set</span>{% endif %}
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="font-size:.85rem;">
           <i class="bi bi-calendar3" style="color:rgba(var(--ps-ink-rgb),.4);width:16px;"></i>
-          <span style="color:rgba(var(--ps-ink-rgb),.5);">Scheduled</span>
+          <span style="color:rgba(var(--ps-ink-rgb),.5);">Release</span>
           <span class="ms-auto fw-semibold">
             {% if podcast.scheduled_date %}{{ podcast.scheduled_date.strftime('%b %d, %Y · %I:%M %p') }}
             {% else %}<span style="color:rgba(var(--ps-ink-rgb),.35);">Not set</span>{% endif %}

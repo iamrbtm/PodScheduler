@@ -8,7 +8,8 @@ def _build_context(podcast_participant):
     participant = pp.participant
     podcast = pp.podcast
     host = podcast.host
-    scheduled = podcast.scheduled_date
+    recording = podcast.recording_date
+    release = podcast.scheduled_date
 
     accept_url = url_for(
         "invitations.respond",
@@ -32,8 +33,10 @@ def _build_context(podcast_participant):
         "participant_role": pp.role_display,
         "episode_title": podcast.title,
         "episode_topic": podcast.topic or "",
-        "episode_date": scheduled.strftime("%B %d, %Y") if scheduled else "TBD",
-        "episode_time": scheduled.strftime("%I:%M %p") if scheduled else "TBD",
+        "episode_date": recording.strftime("%B %d, %Y") if recording else "TBD",
+        "episode_time": recording.strftime("%I:%M %p") if recording else "TBD",
+        "release_date": release.strftime("%B %d, %Y") if release else "TBD",
+        "release_time": release.strftime("%I:%M %p") if release else "TBD",
         "episode_duration": str(podcast.duration_minutes or 60),
         "host_name": host.username,
         "personal_message": pp.message or "",

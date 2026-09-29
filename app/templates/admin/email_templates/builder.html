@@ -227,7 +227,7 @@ function refreshPreview(b, el) {
   const p = el.querySelector('.blk-preview');
   if (!p) return;
   const safe = s => (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, function(_,k){ return '<span style="color:var(--ps-purple-light);font-family:monospace;font-size:.75em;">{{' + k + '}}</span>'; });
+  const hl   = s => safe(s).replace(/\{\{(\w+)\}\}/g, function(_,k){ return '<span style="color:var(--ps-purple-light);font-family:monospace;font-size:.75em;">\u007b\u007b' + k + '\u007d\u007d</span>'; });
   switch (b.type) {
     case 'header':     p.innerHTML = `<div class="preview-header">${hl(b.content)}</div>`; break;
     case 'text':       p.innerHTML = `<div class="preview-text">${hl(b.content)}</div>`; break;
@@ -294,7 +294,7 @@ function field(label, key, value, isTA=false, rows=2, type='text') {
 }
 
 function insertMergeField(key) {
-  const token = '{{' + key + '}}';
+  const token = '\u007b\u007b' + key + '\u007d\u007d';
   const el = window._focused;
   if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) {
     const s = el.selectionStart ?? el.value.length, e2 = el.selectionEnd ?? el.value.length;

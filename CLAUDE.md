@@ -165,7 +165,7 @@ PodScheduler/
 - Property: `is_feed_ready` → True once title/author_name/owner_email/cover_image_url are all set — required before an episode on this show can be distributed
 
 ### Podcast  *(= one episode)*
-- `id`, `title`, `topic`, `description`, `notes`, `status` (PodcastStatus enum), `scheduled_date`, `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
+- `id`, `title`, `topic`, `description`, `notes`, `status` (PodcastStatus enum), `recording_date` (when it's taped), `scheduled_date` (release / go-live — label is "Release Date & Time"), `duration_minutes`, `host_id` (FK User), `created_by_id` (FK User), `show_id` (FK Show, nullable), `created_at`
 - Audio fields: `audio_object_key`, `audio_url`, `audio_duration_seconds`, `audio_file_size`, `episode_number`, `season_number`, `published_at`
 - `PodcastStatus`: `draft`, `scheduled`, `recorded`, `ready_to_distribute`, `published`, `cancelled`
 - Properties: `keynote_slots`, `roundtable_slots`, `participant_count`, `has_audio`, `audio_duration_display`
@@ -236,7 +236,7 @@ Use `@permission_required("perm_name")` decorator on routes. Check in templates 
 
 **Merge fields** available in templates:
 `participant_name`, `participant_first_name`, `participant_email`, `participant_role`,
-`episode_title`, `episode_topic`, `episode_date`, `episode_time`, `episode_duration`,
+`episode_title`, `episode_topic`, `episode_date`/`episode_time` (= recording), `release_date`/`release_time`, `episode_duration`,
 `host_name`, `personal_message`, `accept_url`, `decline_url`
 
 ---
@@ -314,8 +314,8 @@ everyone else sees only episodes where they're `host_id` or `created_by_id`), co
 status color ever changes. Rendered client-side with FullCalendar (CDN, no build step); the page
 itself fetches `GET /calendar/events.json` (login-required).
 
-A podcast becomes a calendar event using `scheduled_date` if set, else `published_at` as a
-fallback; a podcast with neither is omitted from the calendar entirely (still visible everywhere
+A podcast produces up to two calendar events: a **recording** event (`recording_date`, titled `RECORDING - <title>`, length `duration_minutes`) and a **release** event (`scheduled_date` if set, else `published_at` as a
+fallback; 30-minute marker); a podcast with neither is omitted from the calendar entirely (still visible everywhere
 else in the app). **`scheduled_date` is a naive wall-clock value from a `DateTimeLocalField` — the
 same value every other page in this app displays verbatim, with no timezone conversion — and
 `_event_start()` deliberately keeps it naive/floating for exactly that reason.** `published_at` is

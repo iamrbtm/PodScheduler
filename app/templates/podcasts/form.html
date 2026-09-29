@@ -34,6 +34,11 @@
     <div class="card mb-3">
       <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
         <div>
+          {{ form.recording_date.label(class="form-label") }}
+          {{ form.recording_date(class="form-control" + (" is-invalid" if form.recording_date.errors else "")) }}
+          {% for e in form.recording_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div>
           {{ form.scheduled_date.label(class="form-label") }}
           {{ form.scheduled_date(class="form-control" + (" is-invalid" if form.scheduled_date.errors else "")) }}
           {% for e in form.scheduled_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}

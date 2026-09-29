@@ -92,6 +92,8 @@ def preview(template_id):
         "episode_topic": "Artificial Intelligence Trends",
         "episode_date": "October 15, 2026",
         "episode_time": "2:00 PM",
+        "release_date": "October 29, 2026",
+        "release_time": "6:00 AM",
         "episode_duration": "60",
         "host_name": "Alex Johnson",
         "personal_message": "We'd love to have you share your expertise!",

@@ -20,7 +20,8 @@ class Podcast(db.Model):
     description = db.Column(db.Text)
     topic = db.Column(db.String(200))
     notes = db.Column(db.Text)
-    scheduled_date = db.Column(db.DateTime)
+    scheduled_date = db.Column(db.DateTime)  # release (go-live) date/time
+    recording_date = db.Column(db.DateTime)  # when the episode is taped
     duration_minutes = db.Column(db.Integer, default=60)
     status = db.Column(
         db.Enum(PodcastStatus, values_callable=lambda x: [e.value for e in x]),

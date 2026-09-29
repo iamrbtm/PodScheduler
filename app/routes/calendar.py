@@ -39,10 +39,27 @@ def _event_start(podcast):
 
 def _event_duration_minutes(podcast):
     if podcast.scheduled_date:
-        return podcast.duration_minutes or 60
+        return 30  # release is a marker, not a block of time
     if podcast.audio_duration_seconds:
         return max(1, podcast.audio_duration_seconds // 60)
     return 30
+
+
+def _calendar_events(podcast):
+    """Yield (uid_suffix, title, start, end) for each event this episode produces.
+
+    Recording is its own event (naive wall-clock, like scheduled_date), prefixed
+    "RECORDING - "; the release event keeps the original scheduled_date/published_at
+    behavior.
+    """
+    if podcast.recording_date:
+        start = podcast.recording_date
+        end = start + timedelta(minutes=podcast.duration_minutes or 60)
+        yield "recording", f"RECORDING - {podcast.title}", start, end
+    start = _event_start(podcast)
+    if start is not None:
+        end = start + timedelta(minutes=_event_duration_minutes(podcast))
+        yield "release", podcast.title, start, end
 
 
 @calendar_bp.route("/calendar/feed/<token>.ics")
@@ -67,15 +84,15 @@ def ics_feed(token):
 
     base_url = current_app.config["PUBLIC_BASE_URL"]
 
-    for podcast in podcasts:
-        start = _event_start(podcast)
-        if start is None:
-            continue
-        end = start + timedelta(minutes=_event_duration_minutes(podcast))
-
+    for podcast, suffix, title, start, end in (
+        (p, *e) for p in podcasts for e in _calendar_events(p)
+    ):
         event = Event()
-        event.add("uid", f"podscheduler-episode-{podcast.id}@podscheduler.local")
-        event.add("summary", podcast.title)
+        # The release event keeps the original UID so existing subscriptions
+        # don't see it as a new event.
+        uid_kind = "" if suffix == "release" else f"-{suffix}"
+        event.add("uid", f"podscheduler-episode-{podcast.id}{uid_kind}@podscheduler.local")
+        event.add("summary", title)
         event.add("dtstart", start)
         event.add("dtend", end)
         event.add("dtstamp", datetime.now(timezone.utc))
@@ -112,12 +129,10 @@ def _visible_podcasts():
     return query
 
 
-def _event_payload(podcast):
-    start = _event_start(podcast)
-    end = start + timedelta(minutes=_event_duration_minutes(podcast))
+def _event_payload(podcast, suffix, title, start, end):
     return {
-        "id": podcast.id,
-        "title": podcast.title,
+        "id": f"{podcast.id}-{suffix}",
+        "title": title,
         "start": start.isoformat(),
         "end": end.isoformat(),
         "color": STATUS_COLORS[podcast.status],
@@ -135,7 +150,7 @@ def _event_payload(podcast):
 @login_required
 def events_json():
     podcasts = _visible_podcasts().all()
-    events = [_event_payload(p) for p in podcasts if _event_start(p) is not None]
+    events = [_event_payload(p, *e) for p in podcasts for e in _calendar_events(p)]
     return jsonify(events)
 
 

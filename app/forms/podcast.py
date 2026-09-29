@@ -9,8 +9,11 @@ class PodcastForm(FlaskForm):
     topic = StringField("Topic", validators=[Optional(), Length(max=200)])
     description = TextAreaField("Description", validators=[Optional()])
     notes = TextAreaField("Production Notes", validators=[Optional()])
+    recording_date = DateTimeLocalField(
+        "Recording Date & Time", format="%Y-%m-%dT%H:%M", validators=[Optional()]
+    )
     scheduled_date = DateTimeLocalField(
-        "Scheduled Date & Time", format="%Y-%m-%dT%H:%M", validators=[Optional()]
+        "Release Date & Time (goes live)", format="%Y-%m-%dT%H:%M", validators=[Optional()]
     )
     duration_minutes = IntegerField(
         "Duration (minutes)", default=60, validators=[Optional(), NumberRange(min=1, max=600)]

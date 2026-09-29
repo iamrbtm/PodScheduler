@@ -22,13 +22,15 @@
       you've accepted the invitation to appear on
       <strong style="color:#fff;">{{ pg.podcast.title }}</strong>.
     </p>
-    {% if pg.podcast.scheduled_date %}
     <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
       <div style="font-size:.8rem;color:#4ade80;margin-bottom:4px;font-weight:600;">RECORDING DATE</div>
-      <div style="font-size:1rem;font-weight:700;">{{ pg.podcast.scheduled_date.strftime('%B %d, %Y') }}</div>
-      <div style="font-size:.85rem;color:rgba(255,255,255,.6);">{{ pg.podcast.scheduled_date.strftime('%I:%M %p') }}</div>
+      {% if pg.podcast.recording_date %}
+      <div style="font-size:1rem;font-weight:700;">{{ pg.podcast.recording_date.strftime('%B %d, %Y') }}</div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,.6);">{{ pg.podcast.recording_date.strftime('%I:%M %p') }}</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;">TBD</div>
+      {% endif %}
     </div>
-    {% endif %}
     <p style="color:rgba(255,255,255,.35);font-size:.82rem;margin:0;">The host will be in touch with more details. Thank you!</p>
   </div>
 </body>
