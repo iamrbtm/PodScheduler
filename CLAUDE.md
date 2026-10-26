@@ -390,6 +390,8 @@ only *reads* download counts back from it (`app/castopod.py`, stdlib `urllib`, n
 - Results are cached on the `Podcast` row for 1 hour; the refresh button forces a refetch but is
   throttled to once a minute. If Castopod is unreachable the last cached numbers are still shown
   alongside the error.
+- `scripts/verify_castopod.py` checks all of this against a fake Castopod server it starts on
+  127.0.0.1; it saves and restores any real `CastopodSettings` row around the run.
 
 ---
 
@@ -564,7 +566,7 @@ Claude-Session: https://claude.ai/code/session_01NtkwyGzAHoQyLgDNgCa4Tf
 
 ## What this project does NOT have (don't add without asking)
 
-- No test suite (only `scripts/verify_portal.py`, run with `docker compose exec -T web uv run python scripts/verify_portal.py`)
+- No test suite (only `scripts/verify_portal.py` and `scripts/verify_castopod.py`, run with `docker compose exec -T web uv run python scripts/<name>.py`)
 - No API / JSON endpoints, except `email_templates.save`, `calendar.events_json`
   (`GET /calendar/events.json`, login-required, feeds the in-app calendar's FullCalendar widget), and
   `podcasts.castopod_stats` (`GET /podcasts/<id>/castopod-stats.json`, login-required, feeds the
