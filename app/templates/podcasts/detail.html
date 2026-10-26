@@ -81,6 +81,27 @@
   </div>
   {% endif %}
 
+  <!-- Castopod stats -->
+  {% if castopod_enabled %}
+  <div id="castopodStats" data-url="{{ url_for('podcasts.castopod_stats', podcast_id=podcast.id) }}">
+    <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
+      <span class="section-title" style="padding:0;margin:0;">
+        <i class="bi bi-bar-chart me-1" style="font-size:.9rem;"></i> Castopod Stats
+      </span>
+      <button type="button" id="castopodRefresh" class="btn btn-sm" aria-label="Refresh stats"
+              style="color:var(--ps-accent);min-width:48px;min-height:48px;margin:-12px -8px;display:none;">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+    <div id="castopodTiles" class="row g-2 mb-1" style="display:none;">
+      <div class="col-4"><div class="stat-pill"><div class="stat-val" style="color:#4ade80;" data-stat="downloads">–</div><div class="stat-lbl">Downloads</div></div></div>
+      <div class="col-4"><div class="stat-pill"><div class="stat-val" style="color:#38bdf8;" data-stat="show_downloads">–</div><div class="stat-lbl">Show total</div></div></div>
+      <div class="col-4"><div class="stat-pill"><div class="stat-val" style="color:#facc15;" data-stat="comments">–</div><div class="stat-lbl">Comments</div></div></div>
+    </div>
+    <div id="castopodMsg" style="font-size:.78rem;color:rgba(255,255,255,.4);padding:2px 2px 0;margin-bottom:14px;">Loading stats…</div>
+  </div>
+  {% endif %}
+
   <!-- Episode audio card -->
   {% set can_edit = current_user.is_admin() or current_user.has_permission('edit_podcast') or podcast.host_id == current_user.id or podcast.created_by_id == current_user.id %}
   <div class="d-flex align-items-center justify-content-between mb-2" style="padding:0 2px;">
@@ -552,6 +573,70 @@
       sheet.show();
     });
   });
+  // ── Castopod stats ────────────────────────────────────────────
+  var statsEl = document.getElementById('castopodStats');
+  if (statsEl) {
+    var tiles = document.getElementById('castopodTiles');
+    var msg = document.getElementById('castopodMsg');
+    var refreshBtn = document.getElementById('castopodRefresh');
+    var editUrl = {{ url_for('podcasts.edit', podcast_id=podcast.id) | tojson }};
+
+    var ago = function (iso) {
+      var mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + ' min ago';
+      var hrs = Math.round(mins / 60);
+      return hrs + ' hr' + (hrs === 1 ? '' : 's') + ' ago';
+    };
+
+    var render = function (data) {
+      msg.style.color = 'rgba(255,255,255,.4)';
+      if (data.stats) {
+        tiles.style.display = '';
+        tiles.querySelectorAll('[data-stat]').forEach(function (el) {
+          el.textContent = Number(data.stats[el.dataset.stat] || 0).toLocaleString();
+        });
+      } else {
+        tiles.style.display = 'none';
+      }
+      refreshBtn.style.display = (data.state === 'ok' || data.state === 'error') ? '' : 'none';
+
+      if (data.state === 'not_linked') {
+        var missing = [];
+        if (data.missing_episode_id) missing.push('this episode\'s Castopod Episode ID');
+        if (data.missing_show_id) missing.push('its show\'s Castopod Podcast ID');
+        msg.textContent = 'Not linked to Castopod yet. Set ' + missing.join(' and ') + '.';
+        if (data.missing_episode_id) {
+          var a = document.createElement('a');
+          a.href = editUrl; a.textContent = ' Edit episode';
+          a.style.color = 'var(--ps-accent)';
+          msg.appendChild(a);
+        }
+      } else if (data.state === 'error') {
+        msg.style.color = '#f87171';
+        msg.textContent = data.error + (data.synced_at ? ' Showing stats from ' + ago(data.synced_at) + '.' : '');
+      } else if (data.state === 'ok') {
+        msg.textContent = 'Last synced ' + ago(data.synced_at);
+      } else {
+        statsEl.style.display = 'none';
+      }
+    };
+
+    var load = function (refresh) {
+      if (refresh) { msg.textContent = 'Refreshing…'; refreshBtn.disabled = true; }
+      fetch(statsEl.dataset.url + (refresh ? '?refresh=1' : ''), { credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(render)
+        .catch(function () {
+          msg.style.color = '#f87171';
+          msg.textContent = 'Couldn\'t load stats.';
+        })
+        .finally(function () { refreshBtn.disabled = false; });
+    };
+
+    refreshBtn.addEventListener('click', function () { load(true); });
+    load(false);
+  }
 }());
 </script>
 {% endblock %}

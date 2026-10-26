@@ -17,6 +17,8 @@ class Show(db.Model):
     website_url = db.Column(db.String(500))
     cover_image_object_key = db.Column(db.String(500))
     cover_image_url = db.Column(db.String(500))
+    # Numeric podcast id on the linked Castopod instance (see CastopodSettings)
+    castopod_podcast_id = db.Column(db.Integer)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

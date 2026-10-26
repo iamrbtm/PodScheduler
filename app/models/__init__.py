@@ -9,6 +9,7 @@ from .mail_settings import MailSettings
 from .directory_submission import DirectorySubmission, SubmissionStatus
 from .calendar_settings import CalendarSettings
 from .guest_question import GuestQuestion
+from .castopod_settings import CastopodSettings
 
 __all__ = [
     "Role", "User",
@@ -21,4 +22,5 @@ __all__ = [
     "DirectorySubmission", "SubmissionStatus",
     "CalendarSettings",
     "GuestQuestion",
+    "CastopodSettings",
 ]
